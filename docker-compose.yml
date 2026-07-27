@@ -1,0 +1,48 @@
+services:
+  portal-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: labportal
+      POSTGRES_USER: portal_app
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    secrets:
+      - pg_password
+    volumes:
+      - portal_pg_data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+
+  api:
+    build: .
+    container_name: labportal-api
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      - portal-db
+    restart: unless-stopped
+
+  sync-worker:
+    build: .
+    command: ["python3", "sync_worker.py"]
+    env_file: .env
+    depends_on:
+      - portal-db
+
+  scheduler:
+    image: mcuadros/ofelia:latest
+    depends_on:
+      - sync-worker
+    command: daemon --docker
+    labels:
+      ofelia.job-run.sync.schedule: "@every 5m"
+      ofelia.job-run.sync.container: "labportal-sync-worker-1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+secrets:
+  pg_password:
+    file: ./secrets/pg_password.txt
+
+volumes:
+  portal_pg_data:

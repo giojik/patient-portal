@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Innova Medical — პაციენტის პორტალი</title>
+<style>
+  :root {
+    --primary: #0E2340;
+    --primary-light: #16305a;
+    --accent: #FF6B00;
+    --accent-dark: #e05f00;
+    --bg: #F8F9FA;
+    --card-bg: #ffffff;
+    --text: #1f2b3a;
+    --muted: #6b7684;
+    --danger: #c0392b;
+    --success-bg: #e5f5ea;
+    --success-text: #1e8a4c;
+    --warn-bg: #fff1e5;
+    --warn-text: #c25b00;
+    --border: #e6e9ec;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* ---------- LOGIN VIEW ---------- */
+  #loginView {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .login-brand {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .login-brand .logo-mark {
+    width: 56px;
+    height: 56px;
+    background: var(--primary);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: 1.4rem;
+    margin: 0 auto 14px;
+  }
+  .login-brand h1 {
+    font-size: 1.3rem;
+    color: var(--primary);
+    margin: 0 0 4px;
+    font-weight: 700;
+  }
+  .login-brand p { color: var(--muted); font-size: 0.9rem; margin: 0; }
+
+  .login-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(14, 35, 64, 0.08);
+    padding: 32px;
+    width: 100%;
+    max-width: 420px;
+  }
+  .login-tabs {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 14px;
+    background: #eef1f4;
+    padding: 4px;
+    border-radius: 10px;
+  }
+  .login-tab {
+    flex: 1;
+    margin: 0;
+    padding: 9px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .login-tab.active {
+    background: #fff;
+    color: var(--primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; margin-top: 18px; }
+  label:first-of-type { margin-top: 0; }
+  .input-wrap { position: relative; }
+  input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.15s;
+    background: #fff;
+  }
+  input:focus { border-color: var(--primary); }
+  input.invalid { border-color: var(--danger); }
+  .field-error { font-size: 0.78rem; color: var(--danger); margin-top: 5px; display: none; }
+  .toggle-pw {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; width: auto; margin: 0; padding: 4px 8px;
+    font-size: 0.78rem; color: var(--muted); cursor: pointer;
+  }
+  .toggle-pw:hover { color: var(--primary); }
+
+  button.primary {
+    width: 100%; margin-top: 26px; padding: 15px;
+    background: var(--primary); color: white; border: none; border-radius: 10px;
+    font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.15s;
+  }
+  button.primary:hover:not(:disabled) { background: var(--primary-light); }
+  button.primary:disabled { background: #aab3bd; cursor: not-allowed; }
+
+  .banner { display: none; font-size: 0.88rem; margin-top: 16px; padding: 12px 15px; border-radius: 9px; }
+  .banner.error { color: var(--danger); background: #fdf0ee; }
+
+  /* ---------- APP SHELL ---------- */
+  #appShell { display: none; min-height: 100vh; }
+  .app-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--primary);
+    color: #fff;
+    padding: 26px 18px;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 26px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+  .sidebar-logo .logo-mark {
+    width: 36px; height: 36px; background: var(--accent);
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1rem; flex-shrink: 0;
+  }
+  .sidebar-logo span { font-weight: 700; font-size: 1.02rem; }
+
+  .nav-list { list-style: none; padding: 0; margin: 8px 0 0; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 12px; border-radius: 9px; margin-bottom: 4px;
+    color: rgba(255,255,255,0.75); cursor: pointer; font-size: 0.92rem; font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-item .nav-icon { font-size: 1.05rem; width: 20px; text-align: center; }
+  .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .nav-item.active { background: rgba(255,255,255,0.14); color: #fff; font-weight: 700; }
+  .nav-item.disabled { opacity: 0.4; cursor: not-allowed; }
+  .nav-item.disabled:hover { background: none; color: rgba(255,255,255,0.75); }
+
+  .sidebar-logout {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 12px; border-radius: 9px; color: rgba(255,255,255,0.75);
+    cursor: pointer; font-size: 0.92rem; border-top: 1px solid rgba(255,255,255,0.12); margin-top: 8px; padding-top: 18px;
+  }
+  .sidebar-logout:hover { color: #fff; }
+
+  /* Main area */
+  .main-area { display: flex; flex-direction: column; min-width: 0; }
+  .topbar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .hamburger {
+    display: none;
+    background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--primary);
+    width: auto; margin: 0; padding: 4px;
+  }
+  .search-wrap { flex: 1; max-width: 380px; position: relative; }
+  .search-wrap input {
+    padding: 10px 14px 10px 36px; border-radius: 9px; font-size: 0.9rem; background: var(--bg); border: 1.5px solid var(--border);
+  }
+  .search-wrap::before {
+    content: "⌕"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 1.1rem;
+  }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 18px; }
+  .bell { position: relative; font-size: 1.15rem; color: var(--muted); cursor: default; }
+  .bell .dot {
+    position: absolute; top: -3px; right: -3px; width: 8px; height: 8px;
+    background: var(--accent); border-radius: 50%; border: 1.5px solid #fff;
+  }
+  .user-chip { display: flex; align-items: center; gap: 9px; }
+  .user-avatar {
+    width: 34px; height: 34px; border-radius: 50%; background: var(--primary);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+  }
+  .user-chip span { font-size: 0.9rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+
+  .page-content { padding: 32px; flex: 1; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Dashboard */
+  .greeting-card {
+    background: var(--primary);
+    color: #fff;
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 20px;
+  }
+  .greeting-card h2 { margin: 0 0 6px; font-size: 1.3rem; font-weight: 700; }
+  .greeting-card p { margin: 0; color: rgba(255,255,255,0.75); font-size: 0.9rem; }
+
+  .notif-banner {
+    background: var(--warn-bg);
+    border: 1px solid #ffdcb8;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .notif-banner .pin { font-size: 1.1rem; }
+  .notif-banner strong { display: block; color: var(--warn-text); font-size: 0.92rem; margin-bottom: 2px; }
+  .notif-banner span { color: var(--text); font-size: 0.88rem; }
+
+  .section-title {
+    font-size: 1.02rem; font-weight: 700; color: var(--text); margin: 0 0 14px;
+  }
+
+  .data-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  table.results-table { width: 100%; border-collapse: collapse; }
+  table.results-table th {
+    text-align: left; padding: 13px 20px; font-size: 0.72rem; font-weight: 700;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em;
+    background: #fafbfc; border-bottom: 1px solid var(--border);
+  }
+  table.results-table td {
+    padding: 14px 20px; font-size: 0.9rem; border-bottom: 1px solid var(--border); vertical-align: middle;
+  }
+  table.results-table tr:last-child td { border-bottom: none; }
+
+  .status-badge {
+    display: inline-block; padding: 4px 12px; border-radius: 20px;
+    font-size: 0.78rem; font-weight: 700;
+  }
+  .status-badge.ready { background: var(--success-bg); color: var(--success-text); }
+  .status-badge.warn { background: var(--warn-bg); color: var(--warn-text); }
+  .status-badge.danger { background: #fdf0ee; color: var(--danger); }
+
+  .pdf-action {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;
+    background: #fff; color: var(--accent); border: 1.4px solid var(--accent);
+    cursor: pointer; white-space: nowrap;
+  }
+  .pdf-action:hover { background: var(--accent); color: #fff; }
+  .pdf-action:disabled { opacity: 0.5; cursor: wait; }
+
+  .cta-btn {
+    width: auto; margin: 0; padding: 11px 22px;
+    background: var(--accent); color: #fff; border: none; border-radius: 9px;
+    font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  }
+  .cta-btn:hover { background: var(--accent-dark); }
+
+  /* Lab page: date accordion + panel blocks */
+  .filter-bar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  .filter-bar select {
+    padding: 9px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 0.85rem; background: #fff;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.8rem; color: var(--muted); margin-bottom: 18px; }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .dot-lg { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+  .dot-normal { background: var(--success-text); }
+  .dot-borderline { background: #b8860b; }
+  .dot-abnormal { background: var(--danger); }
+
+  .date-group { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff; }
+  .date-group-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 20px; background: #fafbfc; cursor: pointer; user-select: none;
+  }
+  .date-group-header:hover { background: #f2f4f6; }
+  .date-group-title { display: flex; align-items: center; gap: 12px; }
+  .date-group-title h3 { font-size: 0.95rem; font-weight: 700; color: var(--primary); margin: 0; }
+  .date-group-count { font-size: 0.72rem; font-weight: 700; color: var(--primary); background: #eef1f4; padding: 3px 10px; border-radius: 20px; }
+  .date-group-chevron { color: var(--muted); transition: transform 0.2s; }
+  .date-group.collapsed .date-group-chevron { transform: rotate(-90deg); }
+  .date-group-body { padding: 18px 20px 6px; max-height: 6000px; transition: max-height 0.25s ease, padding 0.25s ease; overflow: hidden; }
+  .date-group.collapsed .date-group-body { max-height: 0; padding-top: 0; padding-bottom: 0; }
+
+  .panel-block { margin-bottom: 20px; padding: 16px 18px; background: #fafbfc; border: 1px solid var(--border); border-radius: 10px; }
+  .panel-block:last-child { margin-bottom: 10px; }
+  .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+  .panel-title { font-size: 0.94rem; font-weight: 700; color: var(--text); }
+  .narrative-block {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .narrative-block:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .narrative-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+  }
+  .exam-title-web {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.35em;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  .info-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    font-size: 0.92rem;
+    margin-bottom: 4px;
+  }
+  .info-row .info-label { font-weight: 700; }
+  .narrative-text {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-line;
+  }
+
+  table.mini { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  table.mini th { text-align: left; padding: 8px; font-size: 0.68rem; text-transform: uppercase; color: var(--muted); border-bottom: 1.5px solid var(--border); }
+  table.mini td { padding: 9px 8px; border-bottom: 1px solid var(--border); }
+  table.mini tr:last-child td { border-bottom: none; }
+  .result-value { font-weight: 700; text-align: right; white-space: nowrap; }
+  .norm-range { color: var(--muted); font-size: 0.82rem; white-space: nowrap; }
+  .status-normal .result-value { color: var(--success-text); }
+  .status-borderline .result-value { color: #b8860b; }
+  .status-abnormal .result-value { color: var(--danger); }
+
+  .empty-state, .loading { text-align: center; color: var(--muted); padding: 48px 12px; font-size: 0.92rem; }
+  .spinner {
+    width: 24px; height: 24px; border: 3px solid #e6e9ec; border-top-color: var(--primary);
+    border-radius: 50%; margin: 0 auto 12px; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .placeholder-card {
+    background: #fff; border: 1px dashed var(--border); border-radius: 14px;
+    padding: 60px 24px; text-align: center; color: var(--muted);
+  }
+  .placeholder-card .icon { font-size: 2.2rem; margin-bottom: 10px; }
+
+  /* Mobile */
+  .sidebar-overlay { display: none; }
+  @media (max-width: 880px) {
+    .app-grid { grid-template-columns: 1fr; }
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; width: 250px; z-index: 100;
+      transform: translateX(-100%); transition: transform 0.2s ease;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 90;
+    }
+    .sidebar-overlay.show { display: block; }
+    .hamburger { display: inline-block; }
+    .topbar { padding: 14px 16px; }
+    .search-wrap { display: none; }
+    .user-chip span { display: none; }
+    .page-content { padding: 18px; }
+    table.results-table thead { display: none; }
+    table.results-table, table.results-table tbody, table.results-table tr, table.results-table td { display: block; width: 100%; }
+    table.results-table tr {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; padding: 12px 16px;
+    }
+    table.results-table td { border: none; padding: 5px 0; }
+    table.results-table td.mobile-label {
+      font-size: 0.72rem; color: var(--muted); text-transform: uppercase; font-weight: 700; padding-top: 8px;
+    }
+    .pdf-action { width: 100%; justify-content: center; margin-top: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN VIEW ===================== -->
+<div id="loginView">
+  <div class="login-brand">
+    <div class="logo-mark">IM</div>
+    <h1>Innova Medical</h1>
+    <p>პაციენტის პორტალი</p>
+  </div>
+
+  <div class="login-tabs">
+    <button type="button" class="login-tab active" id="tabOnec" onclick="switchLoginTab('onec')">პირადი ნომრით</button>
+    <button type="button" class="login-tab" id="tabTerra" onclick="switchLoginTab('terra')">LOGIN-ით</button>
+  </div>
+
+  <!-- 1C: პირადი ნომერი + OTP -->
+  <div class="login-card" id="onecLoginCard">
+    <div id="onecStep1">
+      <label for="personalIdInput">პირადი ნომერი</label>
+      <div class="input-wrap">
+        <input id="personalIdInput" type="text" inputmode="numeric" autocomplete="off"
+               placeholder="მაგ. 01001032670" maxlength="20">
+      </div>
+      <div id="personalIdFieldError" class="field-error">გთხოვთ შეიყვანოთ სწორი პირადი ნომერი</div>
+
+      <button id="requestCodeBtn" class="primary" onclick="doRequestCode()" disabled>კოდის მიღება</button>
+      <div id="onecBanner1" class="banner error"></div>
+    </div>
+
+    <div id="onecStep2" style="display:none;">
+      <div class="field-hint" id="phoneHintText" style="margin-bottom:10px;"></div>
+
+      <label for="otpInput">დაადასტურეთ კოდი</label>
+      <div class="input-wrap">
+        <input id="otpInput" type="text" inputmode="numeric" autocomplete="one-time-code"
+               placeholder="6-ნიშნა კოდი" maxlength="6">
+      </div>
+      <div id="debugCodeHint" class="field-hint" style="display:none;"></div>
+
+      <button id="verifyCodeBtn" class="primary" onclick="doVerifyCode()" disabled>დადასტურება</button>
+      <button type="button" class="toggle-pw" style="margin-top:12px;" onclick="backToStep1()">← სხვა პირადი ნომრით შესვლა</button>
+      <div id="onecBanner2" class="banner error"></div>
+    </div>
+  </div>
+
+  <!-- Terra: LOGIN/PASS (ლეგასი) -->
+  <div class="login-card" id="terraLoginCard" style="display:none;">
+    <label for="loginInput">მომხმარებლის ID (LOGIN)</label>
+    <div class="input-wrap">
+      <input id="loginInput" type="text" inputmode="numeric" autocomplete="username"
+             placeholder="მაგ. 862588762887" maxlength="20">
+    </div>
+    <div id="loginFieldError" class="field-error">გთხოვთ შეიყვანოთ სწორი LOGIN (მხოლოდ ციფრები)</div>
+
+    <label for="passwordInput">კოდი</label>
+    <div class="input-wrap">
+      <input id="passwordInput" type="password" inputmode="numeric" autocomplete="current-password"
+             placeholder="6-ნიშნა კოდი" maxlength="10">
+      <button type="button" class="toggle-pw" onclick="togglePassword()">ჩვენება</button>
+    </div>
+    <div id="passwordFieldError" class="field-error">გთხოვთ შეიყვანოთ კოდი</div>
+
+    <button id="loginBtn" class="primary" onclick="doLogin()" disabled>შესვლა</button>
+    <div id="loginBanner" class="banner error"></div>
+  </div>
+</div>
+
+<!-- ===================== APP SHELL ===================== -->
+<div id="appShell">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+  <div class="app-grid">
+
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-mark">IM</div>
+        <span>Innova Medical</span>
+      </div>
+      <ul class="nav-list">
+        <li class="nav-item active" data-page="dashboard" onclick="setActivePage('dashboard')">
+          <span class="nav-icon">🏠</span> მთავარი გვერდი
+        </li>
+        <li class="nav-item" data-page="lab" onclick="setActivePage('lab')">
+          <span class="nav-icon">🔬</span> ლაბორატორიული კვლევები
+        </li>
+        <li class="nav-item" data-page="radiology" onclick="setActivePage('radiology')">
+          <span class="nav-icon">📷</span> რადიოლოგიური პასუხები
+        </li>
+        <li class="nav-item" data-page="history" onclick="setActivePage('history')">
+          <span class="nav-icon">🕒</span> ისტორია
+        </li>
+        <li class="nav-item disabled">
+          <span class="nav-icon">⚙️</span> პარამეტრები
+        </li>
+      </ul>
+      <div class="sidebar-logout" onclick="doLogout()">
+        <span class="nav-icon">🚪</span> გასვლა
+      </div>
+    </nav>
+
+    <div class="main-area">
+      <div class="topbar">
+        <button class="hamburger" onclick="toggleSidebar(true)">☰</button>
+        <div class="search-wrap">
+          <input id="searchInput" type="text" placeholder="ძებნა კვლევის დასახელებით..." oninput="onSearchInput()">
+        </div>
+        <div class="topbar-right">
+          <div class="bell">🔔<span class="dot" id="notifDot" style="display:none;"></span></div>
+          <div class="user-chip">
+            <div class="user-avatar" id="userAvatar">?</div>
+            <span id="userName"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-content">
+
+        <!-- DASHBOARD -->
+        <div class="page active" id="page-dashboard">
+          <div class="greeting-card">
+            <h2 id="greetingName">მოგესალმებით!</h2>
+            <p>თქვენი ლაბორატორიული კვლევების შედეგები ერთ სივრცეშია — მოძებნეთ, ჩამოტვირთეთ ან გაზიარეთ თქვენს ექიმთან.</p>
+          </div>
+
+          <div id="dashboardNotif"></div>
+
+          <div class="section-title">ბოლო კვლევების სტატუსი</div>
+          <div class="data-card">
+            <table class="results-table" id="recentTable">
+              <thead>
+                <tr><th>თარიღი</th><th>კვლევის დასახელება</th><th>სტატუსი</th><th>მოქმედება</th></tr>
+              </thead>
+              <tbody id="recentTableBody"></tbody>
+            </table>
+          </div>
+
+          <button class="cta-btn" onclick="setActivePage('lab')">ყველა პასუხის ნახვა</button>
+        </div>
+
+        <!-- LAB -->
+        <div class="page" id="page-lab">
+          <div class="section-title">ლაბორატორიული კვლევები</div>
+          <div class="filter-bar">
+            <select id="dateRangeFilter" onchange="rerenderLab()">
+              <option value="all">ყველა პერიოდი</option>
+              <option value="30">ბოლო 1 თვე</option>
+              <option value="180">ბოლო 6 თვე</option>
+              <option value="365">ბოლო 1 წელი</option>
+            </select>
+          </div>
+          <div class="legend">
+            <span><i class="dot-lg dot-normal"></i>ნორმის ფარგლებში</span>
+            <span><i class="dot-lg dot-borderline"></i>ნორმის ზღვარზე</span>
+            <span><i class="dot-lg dot-abnormal"></i>ნორმიდან გადახრილი</span>
+          </div>
+          <div id="labContent"></div>
+        </div>
+
+        <!-- RADIOLOGY -->
+        <div class="page" id="page-radiology">
+          <div class="section-title">რადიოლოგიური პასუხები</div>
+          <div id="radiologyContent"></div>
+        </div>
+
+        <!-- HISTORY (ყველა კატეგორია, სრული ისტორია) -->
+        <div class="page" id="page-history">
+          <div class="section-title">სრული ისტორია</div>
+          <div class="legend">
+            <span><i class="dot-lg dot-normal"></i>ნორმის ფარგლებში</span>
+            <span><i class="dot-lg dot-borderline"></i>ნორმის ზღვარზე</span>
+            <span><i class="dot-lg dot-abnormal"></i>ნორმიდან გადახრილი</span>
+          </div>
+          <div id="historyContent"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "";
+let allResults = [];
+
+/* ---------- LOGIN TAB SWITCHING ---------- */
+function switchLoginTab(tab) {
+  const isOnec = tab === "onec";
+  document.getElementById("tabOnec").classList.toggle("active", isOnec);
+  document.getElementById("tabTerra").classList.toggle("active", !isOnec);
+  document.getElementById("onecLoginCard").style.display = isOnec ? "block" : "none";
+  document.getElementById("terraLoginCard").style.display = isOnec ? "none" : "block";
+}
+
+/* ---------- 1C: პირადი ნომერი + OTP ---------- */
+const personalIdInput = document.getElementById("personalIdInput");
+const requestCodeBtn = document.getElementById("requestCodeBtn");
+const otpInput = document.getElementById("otpInput");
+const verifyCodeBtn = document.getElementById("verifyCodeBtn");
+let pendingPersonalId = "";
+
+function validateOnecStep1() {
+  const val = personalIdInput.value.trim();
+  const valid = val.length >= 9 && onlyDigits(val);
+  document.getElementById("personalIdFieldError").style.display = (val.length > 0 && !valid) ? "block" : "none";
+  personalIdInput.classList.toggle("invalid", val.length > 0 && !valid);
+  requestCodeBtn.disabled = !valid;
+  return valid;
+}
+personalIdInput.addEventListener("input", () => {
+  personalIdInput.value = personalIdInput.value.replace(/[^0-9]/g, "");
+  hideOnecBanner(1);
+  validateOnecStep1();
+});
+
+function validateOnecStep2() {
+  const valid = otpInput.value.trim().length === 6 && onlyDigits(otpInput.value.trim());
+  verifyCodeBtn.disabled = !valid;
+  return valid;
+}
+otpInput.addEventListener("input", () => {
+  otpInput.value = otpInput.value.replace(/[^0-9]/g, "");
+  hideOnecBanner(2);
+  validateOnecStep2();
+});
+
+function showOnecBanner(step, msg) {
+  const el = document.getElementById(`onecBanner${step}`);
+  el.textContent = msg;
+  el.style.display = "block";
+}
+function hideOnecBanner(step) {
+  document.getElementById(`onecBanner${step}`).style.display = "none";
+}
+
+async function doRequestCode() {
+  hideOnecBanner(1);
+  if (!validateOnecStep1()) return;
+  pendingPersonalId = personalIdInput.value.trim();
+
+  requestCodeBtn.disabled = true;
+  requestCodeBtn.textContent = "იტვირთება...";
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/auth/request-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ personal_id: pendingPersonalId }),
+    });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      if (resp.status === 429) showOnecBanner(1, "ძალიან ბევრი მცდელობა. სცადეთ 15 წუთში ხელახლა.");
+      else if (resp.status === 404) showOnecBanner(1, "პაციენტი ვერ მოიძებნა. გადაამოწმეთ პირადი ნომერი.");
+      else showOnecBanner(1, "დაფიქსირდა შეცდომა. სცადეთ ხელახლა.");
+      return;
+    }
+
+    document.getElementById("phoneHintText").textContent = `კოდი გამოგზავნილია ტელეფონზე ${data.phone_hint || ""}`;
+
+    // ⚠️ დროებითი, SMS ინტეგრაციამდე — თუ backend-მა debug კოდი დააბრუნა, ვაჩვენოთ
+    const debugEl = document.getElementById("debugCodeHint");
+    if (data._debug_code) {
+      debugEl.textContent = `(სატესტო რეჟიმი — კოდი: ${data._debug_code})`;
+      debugEl.style.display = "block";
+    } else {
+      debugEl.style.display = "none";
+    }
+
+    document.getElementById("onecStep1").style.display = "none";
+    document.getElementById("onecStep2").style.display = "block";
+    otpInput.value = "";
+    validateOnecStep2();
+    otpInput.focus();
+  } catch (err) {
+    showOnecBanner(1, "კავშირის შეცდომა. სცადეთ ხელახლა.");
+  } finally {
+    requestCodeBtn.disabled = false;
+    requestCodeBtn.textContent = "კოდის მიღება";
+  }
+}
+
+async function doVerifyCode() {
+  hideOnecBanner(2);
+  if (!validateOnecStep2()) return;
+
+  verifyCodeBtn.disabled = true;
+  verifyCodeBtn.textContent = "მოწმდება...";
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/auth/verify-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ personal_id: pendingPersonalId, code: otpInput.value.trim() }),
+    });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showOnecBanner(2, "არასწორი ან ვადაგასული კოდი.");
+      return;
+    }
+
+    sessionStorage.setItem("portal_token", data.token);
+    sessionStorage.setItem("portal_name", data.full_name);
+    otpInput.value = "";
+    enterApp(data.full_name);
+    await loadResults();
+  } catch (err) {
+    showOnecBanner(2, "კავშირის შეცდომა. სცადეთ ხელახლა.");
+  } finally {
+    verifyCodeBtn.disabled = false;
+    verifyCodeBtn.textContent = "დადასტურება";
+  }
+}
+
+function backToStep1() {
+  document.getElementById("onecStep2").style.display = "none";
+  document.getElementById("onecStep1").style.display = "block";
+  hideOnecBanner(2);
+}
+
+/* ---------- LOGIN FORM VALIDATION (Terra) ---------- */
+const loginInput = document.getElementById("loginInput");
+const passwordInput = document.getElementById("passwordInput");
+const loginBtn = document.getElementById("loginBtn");
+
+function onlyDigits(value) { return /^[0-9]+$/.test(value); }
+
+function validateForm() {
+  const login = loginInput.value.trim();
+  const password = passwordInput.value.trim();
+  const loginValid = login.length >= 6 && onlyDigits(login);
+  const passwordValid = password.length >= 4 && onlyDigits(password);
+
+  document.getElementById("loginFieldError").style.display = (login.length > 0 && !loginValid) ? "block" : "none";
+  loginInput.classList.toggle("invalid", login.length > 0 && !loginValid);
+  document.getElementById("passwordFieldError").style.display = (password.length > 0 && !passwordValid) ? "block" : "none";
+  passwordInput.classList.toggle("invalid", password.length > 0 && !passwordValid);
+
+  loginBtn.disabled = !(loginValid && passwordValid);
+  return loginValid && passwordValid;
+}
+loginInput.addEventListener("input", () => { loginInput.value = loginInput.value.replace(/[^0-9]/g, ""); hideBanner(); validateForm(); });
+passwordInput.addEventListener("input", () => { passwordInput.value = passwordInput.value.replace(/[^0-9]/g, ""); hideBanner(); validateForm(); });
+
+function togglePassword() {
+  const btn = document.querySelector("#terraLoginCard .toggle-pw");
+  if (passwordInput.type === "password") { passwordInput.type = "text"; btn.textContent = "დამალვა"; }
+  else { passwordInput.type = "password"; btn.textContent = "ჩვენება"; }
+}
+function showBanner(msg) { const el = document.getElementById("loginBanner"); el.textContent = msg; el.style.display = "block"; }
+function hideBanner() { document.getElementById("loginBanner").style.display = "none"; }
+
+async function doLogin() {
+  hideBanner();
+  if (!validateForm()) return;
+  const login = loginInput.value.trim();
+  const password = passwordInput.value.trim();
+
+  loginBtn.disabled = true;
+  loginBtn.textContent = "იტვირთება...";
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/login`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ login, password }),
+    });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      if (resp.status === 429) showBanner("ძალიან ბევრი მცდელობა. სცადეთ 15 წუთში ხელახლა.");
+      else if (resp.status === 404) showBanner("თქვენი მონაცემები ჯერ არ არის ხელმისაწვდომი პორტალზე. სცადეთ მოგვიანებით.");
+      else showBanner("არასწორი LOGIN ან კოდი. გთხოვთ, გადაამოწმოთ.");
+      return;
+    }
+
+    sessionStorage.setItem("portal_token", data.token);
+    sessionStorage.setItem("portal_name", data.full_name);
+    passwordInput.value = "";
+    enterApp(data.full_name);
+    await loadResults();
+  } catch (err) {
+    showBanner("კავშირის შეცდომა. შეამოწმეთ ინტერნეტი და სცადეთ ხელახლა.");
+  } finally {
+    loginBtn.textContent = "შესვლა";
+    validateForm();
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem("portal_token");
+  sessionStorage.removeItem("portal_name");
+  document.getElementById("appShell").style.display = "none";
+  document.getElementById("loginView").style.display = "flex";
+
+  loginInput.value = ""; passwordInput.value = ""; passwordInput.type = "password";
+  document.querySelector("#terraLoginCard .toggle-pw").textContent = "ჩვენება";
+  validateForm();
+
+  personalIdInput.value = "";
+  otpInput.value = "";
+  pendingPersonalId = "";
+  document.getElementById("onecStep1").style.display = "block";
+  document.getElementById("onecStep2").style.display = "none";
+  hideOnecBanner(1);
+  hideOnecBanner(2);
+  validateOnecStep1();
+  switchLoginTab("onec");
+}
+
+/* ---------- APP SHELL NAV ---------- */
+function enterApp(fullName) {
+  document.getElementById("loginView").style.display = "none";
+  document.getElementById("appShell").style.display = "block";
+  document.getElementById("greetingName").textContent = `მოგესალმებით, ${fullName}!`;
+  document.getElementById("userName").textContent = fullName;
+  document.getElementById("userAvatar").textContent = (fullName || "?").trim().charAt(0);
+}
+
+function setActivePage(pageKey) {
+  document.querySelectorAll(".nav-item[data-page]").forEach(el => {
+    el.classList.toggle("active", el.dataset.page === pageKey);
+  });
+  document.querySelectorAll(".page").forEach(el => {
+    el.classList.toggle("active", el.id === `page-${pageKey}`);
+  });
+  toggleSidebar(false);
+}
+
+function toggleSidebar(open) {
+  document.getElementById("sidebar").classList.toggle("open", open);
+  document.getElementById("sidebarOverlay").classList.toggle("show", open);
+}
+
+function onSearchInput() {
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const activePage = document.querySelector(".page.active").id;
+  if (activePage === "page-lab") renderLabPage(filterByQuery(allResults, q));
+  else if (activePage === "page-radiology") renderRadiologyPage(filterByQuery(allResults, q));
+  else if (activePage === "page-history") renderHistoryPage(filterByQuery(allResults, q));
+}
+function filterByQuery(results, q) {
+  if (!q) return results;
+  return results.filter(r =>
+    (r.test_name || "").toLowerCase().includes(q) ||
+    (r.panel_name || "").toLowerCase().includes(q)
+  );
+}
+
+/* ---------- DATA LOADING ---------- */
+async function loadResults() {
+  const token = sessionStorage.getItem("portal_token");
+  try {
+    const resp = await fetch(`${API_BASE}/api/results`, { headers: { "Authorization": `Bearer ${token}` } });
+    if (resp.status === 401) { doLogout(); return; }
+    allResults = await resp.json();
+    renderDashboard(allResults);
+    renderLabPage(allResults);
+    renderRadiologyPage(allResults);
+    renderHistoryPage(allResults);
+  } catch (err) {
+    document.getElementById("labContent").innerHTML = '<div class="empty-state">შედეგების ჩატვირთვა ვერ მოხერხდა. სცადეთ გვერდის განახლება.</div>';
+  }
+}
+
+/* ---------- helpers: group results into panels ---------- */
+function groupIntoPanels(results) {
+  const panels = {};
+  const order = [];
+  for (const r of results) {
+    const key = r.panel_group_id || (r.panel_name + r.sample_date);
+    if (!panels[key]) {
+      panels[key] = { groupId: r.panel_group_id, name: r.panel_name || r.test_name, date: r.sample_date, items: [] };
+      order.push(key);
+    }
+    panels[key].items.push(r);
+  }
+  return order.map(k => panels[k]).sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+function panelStatusBadge(panel) {
+  // ამ ეტაპზე ყველა სინქრონიზებული პანელი უკვე დასრულებულია (DATE_DONE არსებობს),
+  // მომავალში აქ დაემატება "მუშავდება" სტატუსი pending შეკვეთებისთვის.
+  const hasAbnormal = panel.items.some(i => i.status === "abnormal");
+  if (hasAbnormal) return '<span class="status-badge danger">ყურადღება საჭირო</span>';
+  return '<span class="status-badge ready">მზად არის</span>';
+}
+
+/* ---------- DASHBOARD ---------- */
+function renderDashboard(results) {
+  const panels = groupIntoPanels(results);
+
+  const notifEl = document.getElementById("dashboardNotif");
+  if (panels.length > 0) {
+    const latest = panels[0];
+    notifEl.innerHTML = `
+      <div class="notif-banner">
+        <span class="pin">📌</span>
+        <div>
+          <strong>ბოლო შეტყობინება</strong>
+          <span>თქვენი „${escapeHtml(latest.name)}" პასუხი მზად არის და ხელმისაწვდომია.</span>
+        </div>
+      </div>
+    `;
+    document.getElementById("notifDot").style.display = "block";
+  } else {
+    notifEl.innerHTML = "";
+  }
+
+  const recent = panels.slice(0, 5);
+  const tbody = document.getElementById("recentTableBody");
+  if (!recent.length) {
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state">შედეგები ჯერ არ არის ხელმისაწვდომი</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = recent.map(panel => `
+    <tr>
+      <td class="mobile-label">თარიღი</td>
+      <td>${formatDate(panel.date)}</td>
+      <td class="mobile-label">კვლევა</td>
+      <td>${escapeHtml(panel.name)}</td>
+      <td class="mobile-label">სტატუსი</td>
+      <td>${panelStatusBadge(panel)}</td>
+      <td class="mobile-label">მოქმედება</td>
+      <td>${panel.groupId ? `<button class="pdf-action" onclick="downloadReport('${panel.groupId}', this)">📄 PDF</button>` : "—"}</td>
+    </tr>
+  `).join("");
+}
+
+/* ---------- LAB PAGE ---------- */
+function applyDateFilter(results) {
+  const val = document.getElementById("dateRangeFilter").value;
+  if (val === "all") return results;
+  const days = parseInt(val, 10);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return results.filter(r => new Date(r.sample_date) >= cutoff);
+}
+
+function rerenderLab() {
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  renderLabPage(filterByQuery(allResults, q));
+}
+
+function renderLabPage(results) {
+  const labOnly = results.filter(r => (r.category || "lab") === "lab");
+  const filtered = applyDateFilter(labOnly);
+  document.getElementById("labContent").innerHTML = renderDateGroupedAccordion(filtered, "labEmpty");
+}
+
+function renderRadiologyPage(results) {
+  const radiologyOnly = results.filter(r => r.category === "radiology");
+  document.getElementById("radiologyContent").innerHTML = radiologyOnly.length
+    ? renderDateGroupedAccordion(radiologyOnly, "radiologyEmpty")
+    : `
+      <div class="placeholder-card">
+        <div class="icon">📷</div>
+        <div>რადიოლოგიური კვლევები ჯერ არ არის ხელმისაწვდომი</div>
+      </div>
+    `;
+}
+
+function renderHistoryPage(results) {
+  document.getElementById("historyContent").innerHTML = renderDateGroupedAccordion(results, "historyEmpty");
+}
+
+function renderDateGroupedAccordion(results, emptyId) {
+  if (!results.length) {
+    return '<div class="empty-state">შედეგები ვერ მოიძებნა</div>';
+  }
+
+  const dateGroups = {};
+  for (const r of results) {
+    const dateKey = r.sample_date.slice(0, 10);
+    if (!dateGroups[dateKey]) dateGroups[dateKey] = [];
+    dateGroups[dateKey].push(r);
+  }
+  const sortedDates = Object.keys(dateGroups).sort().reverse();
+
+  return sortedDates.map((dateKey, idx) => {
+    const dateItems = dateGroups[dateKey];
+    const isCollapsed = idx > 0;
+
+    const panelGroups = {};
+    const panelOrder = [];
+    for (const r of dateItems) {
+      const key = r.panel_group_id || r.panel_name || "სხვა";
+      if (!panelGroups[key]) {
+        panelGroups[key] = { name: r.panel_name || "კვლევა", items: [], groupId: r.panel_group_id };
+        panelOrder.push(key);
+      }
+      panelGroups[key].items.push(r);
+    }
+
+    const panelsHtml = panelOrder.map(key => {
+      const panel = panelGroups[key];
+      const isNarrative = panel.items.every(r => r.category === "radiology");
+
+      const pdfButton = panel.groupId
+        ? `<button class="pdf-action" onclick="downloadReport('${panel.groupId}', this)">📄 PDF ჩამოტვირთვა</button>` : "";
+
+      if (isNarrative) {
+        let firstItemProcessed = false;
+        const blocks = panel.items.map(r => {
+          if (r.blocks && r.blocks.length) {
+            let itemBlocks = r.blocks;
+            if (!firstItemProcessed) {
+              let idx = 0;
+              while (idx < itemBlocks.length && idx < 3 && itemBlocks[idx].type === "text") idx++;
+              itemBlocks = itemBlocks.slice(idx);
+              firstItemProcessed = true;
+            }
+            return `<div class="narrative-block">${renderNarrativeBlocks(itemBlocks)}</div>`;
+          }
+          return `
+          <div class="narrative-block">
+            <div class="narrative-title">${escapeHtml(r.test_name)}</div>
+            <div class="narrative-text">${escapeHtml(r.result_value) || "დასკვნის ტექსტი არ არის ხელმისაწვდომი"}</div>
+          </div>
+        `;
+        }).join("");
+
+        return `
+          <div class="panel-block">
+            <div class="panel-header">
+              <span class="panel-title">${escapeHtml(panel.name)}</span>
+              ${pdfButton}
+            </div>
+            ${blocks}
+          </div>`;
+      }
+
+      const rows = panel.items.map(r => {
+        const statusClass = `status-${r.status || "unknown"}`;
+        const normRange = (r.norm_low != null && r.norm_high != null)
+          ? `${escapeHtml(r.norm_low)} – ${escapeHtml(r.norm_high)}` : "—";
+        return `
+        <tr class="${statusClass}">
+          <td>${escapeHtml(r.test_name)}</td>
+          <td class="result-value">${escapeHtml(r.result_value) || "—"} ${escapeHtml(r.unit || "")}</td>
+          <td class="norm-range">${normRange}</td>
+        </tr>`;
+      }).join("");
+
+      return `
+        <div class="panel-block">
+          <div class="panel-header">
+            <span class="panel-title">${escapeHtml(panel.name)}</span>
+            ${pdfButton}
+          </div>
+          <table class="mini">
+            <thead><tr><th>კვლევა</th><th>შედეგი</th><th>ნორმა</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }).join("");
+
+    return `
+      <div class="date-group ${isCollapsed ? "collapsed" : ""}">
+        <div class="date-group-header" onclick="toggleGroup(this)">
+          <div class="date-group-title">
+            <h3>${formatDate(dateKey)}</h3>
+            <span class="date-group-count">${dateItems.length}</span>
+          </div>
+          <span class="date-group-chevron">▾</span>
+        </div>
+        <div class="date-group-body">${panelsHtml}</div>
+      </div>`;
+  }).join("");
+}
+
+function toggleGroup(headerEl) { headerEl.parentElement.classList.toggle("collapsed"); }
+
+function renderNarrativeBlocks(blocks) {
+  let html = "";
+  blocks.forEach(block => {
+    if (block.type === "row") {
+      const cells = block.cells.map(c => {
+        const isLabel = c.trim().endsWith(":");
+        return `<span class="${isLabel ? "info-label" : ""}">${escapeHtml(c)}</span>`;
+      }).join(" ");
+      html += `<div class="info-row">${cells}</div>`;
+    } else if (block.content) {
+      html += `<div class="narrative-text">${escapeHtml(block.content)}</div>`;
+    }
+  });
+  return html;
+}
+
+/* ---------- PDF DOWNLOAD ---------- */
+async function downloadReport(panelGroupId, btnEl) {
+  const token = sessionStorage.getItem("portal_token");
+  const originalText = btnEl.textContent;
+  btnEl.disabled = true;
+  btnEl.textContent = "იტვირთება...";
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/report/${panelGroupId}`, { headers: { "Authorization": `Bearer ${token}` } });
+    if (!resp.ok) {
+      if (resp.status === 401) { doLogout(); return; }
+      throw new Error("PDF generation failed");
+    }
+    const blob = await resp.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `report_${panelGroupId.slice(0, 8)}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    alert("PDF-ის ჩამოტვირთვა ვერ მოხერხდა. სცადეთ ხელახლა.");
+  } finally {
+    btnEl.disabled = false;
+    btnEl.textContent = originalText;
+  }
+}
+
+/* ---------- UTILS ---------- */
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("ka-GE", { year: "numeric", month: "long", day: "numeric" });
+}
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  validateForm();
+  validateOnecStep1();
+  const token = sessionStorage.getItem("portal_token");
+  const name = sessionStorage.getItem("portal_name");
+  if (token && name) {
+    enterApp(name);
+    loadResults();
+  }
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  if (document.getElementById("loginView").style.display === "none") return;
+
+  if (document.getElementById("terraLoginCard").style.display !== "none" && !loginBtn.disabled) {
+    doLogin();
+  } else if (document.getElementById("onecStep2").style.display !== "none" && !verifyCodeBtn.disabled) {
+    doVerifyCode();
+  } else if (document.getElementById("onecStep1").style.display !== "none" && !requestCodeBtn.disabled) {
+    doRequestCode();
+  }
+});
+</script>
+
+</body>
+</html>
