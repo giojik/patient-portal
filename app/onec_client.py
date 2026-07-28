@@ -394,6 +394,7 @@ def get_panel_by_id(document_ref: str, expected_kartoteka_ref: str):
 
     return {
         "panel_name": items[0]["panel_name"],
+        "category": items[0]["category"],
         "sample_date": sample_date,
         "is_narrative": is_narrative,
         "document_number": doc.get("Number", ""),

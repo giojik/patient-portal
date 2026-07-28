@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Innova Medical — ადმინის პანელი</title>
+<style>
+  :root {
+    --primary: #0E2340;
+    --primary-light: #16305a;
+    --accent: #FF6B00;
+    --accent-dark: #e05f00;
+    --bg: #F8F9FA;
+    --card-bg: #ffffff;
+    --text: #1f2b3a;
+    --muted: #6b7684;
+    --danger: #c0392b;
+    --success-bg: #e5f5ea;
+    --success-text: #1e8a4c;
+    --warn-bg: #fff1e5;
+    --warn-text: #c25b00;
+    --border: #e6e9ec;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; min-height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  a { color: inherit; }
+
+  /* ---------- LOGIN ---------- */
+  #loginView {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  .login-brand { text-align: center; margin-bottom: 28px; }
+  .login-brand .logo-mark {
+    width: 56px; height: 56px; background: var(--primary); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 1.4rem; margin: 0 auto 14px;
+  }
+  .login-brand h1 { font-size: 1.25rem; color: var(--primary); margin: 0 0 4px; font-weight: 700; }
+  .login-brand p { color: var(--muted); font-size: 0.9rem; margin: 0; }
+  .login-card {
+    background: var(--card-bg); border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(14, 35, 64, 0.08);
+    padding: 32px; width: 100%; max-width: 380px;
+  }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  .field input, .field select {
+    width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--border);
+    font-size: 0.95rem; background: #fff; color: var(--text);
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--primary); }
+  .btn {
+    width: 100%; padding: 12px; border: none; border-radius: 10px;
+    background: var(--primary); color: #fff; font-weight: 700; font-size: 0.95rem;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .btn:hover { background: var(--primary-light); }
+  .btn.accent { background: var(--accent); }
+  .btn.accent:hover { background: var(--accent-dark); }
+  .btn.small { width: auto; padding: 8px 14px; font-size: 0.85rem; }
+  .btn.ghost { background: transparent; color: var(--danger); border: 1px solid var(--border); }
+  .btn.ghost:hover { background: #fbeceb; }
+  .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 10px; text-align: center; display: none; }
+
+  /* ---------- APP SHELL ---------- */
+  #appView { display: none; min-height: 100vh; }
+  .topbar {
+    background: var(--primary); color: #fff; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .topbar .brand .logo-mark {
+    width: 32px; height: 32px; background: var(--accent); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+  }
+  .topbar .logout { cursor: pointer; opacity: 0.85; font-size: 0.85rem; }
+  .topbar .logout:hover { opacity: 1; }
+
+  .tabs {
+    display: flex; gap: 4px; background: #fff; border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .tab {
+    padding: 14px 18px; font-size: 0.9rem; font-weight: 600; color: var(--muted);
+    cursor: pointer; border-bottom: 3px solid transparent;
+  }
+  .tab.active { color: var(--primary); border-bottom-color: var(--accent); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
+  .card {
+    background: var(--card-bg); border-radius: 14px; border: 1px solid var(--border);
+    padding: 20px; margin-bottom: 16px;
+  }
+  .card h3 { margin: 0 0 4px; font-size: 1.02rem; color: var(--primary); }
+  .card .sub { color: var(--muted); font-size: 0.82rem; margin: 0 0 14px; }
+
+  .flag-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .flag-row:last-child { border-bottom: none; }
+  .flag-row .label { font-weight: 600; font-size: 0.95rem; }
+  .flag-row .key { color: var(--muted); font-size: 0.78rem; font-family: monospace; }
+
+  .switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute; inset: 0; background: #ccc; border-radius: 999px;
+    cursor: pointer; transition: 0.2s;
+  }
+  .switch .slider::before {
+    content: ""; position: absolute; width: 20px; height: 20px; left: 3px; bottom: 3px;
+    background: #fff; border-radius: 50%; transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: var(--success-text); }
+  .switch input:checked + .slider::before { transform: translateX(20px); }
+
+  .overrides-toggle { font-size: 0.8rem; color: var(--accent-dark); cursor: pointer; font-weight: 600; margin-top: 6px; }
+  .overrides-box { margin-top: 10px; padding: 12px; background: var(--bg); border-radius: 10px; display: none; }
+  .override-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 0; font-size: 0.85rem;
+  }
+  .override-item .name { font-weight: 600; }
+  .add-override-row { display: flex; gap: 8px; margin-top: 10px; }
+  .add-override-row select { flex: 1; }
+
+  .group-card { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .group-card:last-child { border-bottom: none; }
+  .group-name { font-weight: 700; }
+  .group-count { color: var(--muted); font-size: 0.8rem; }
+  .group-actions { display: flex; gap: 8px; }
+  .group-actions a { font-size: 0.85rem; font-weight: 600; color: var(--primary); cursor: pointer; }
+
+  .new-row { display: flex; gap: 10px; margin-top: 6px; }
+  .new-row input, .new-row select { flex: 1; }
+
+  .member-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+  .member-row:last-child { border-bottom: none; }
+  .member-row .src-badge {
+    font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    background: var(--warn-bg); color: var(--warn-text); margin-right: 8px;
+  }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 10px;
+    font-size: 0.85rem; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; }
+  .empty { color: var(--muted); font-size: 0.85rem; padding: 10px 0; }
+  .modal-back {
+    display: none; position: fixed; inset: 0; background: rgba(14,35,64,0.45);
+    align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-back.show { display: flex; }
+  .modal { background: #fff; border-radius: 14px; padding: 24px; width: 92%; max-width: 480px; max-height: 80vh; overflow-y: auto; }
+  .modal h3 { margin-top: 0; }
+  .modal-close { float: right; cursor: pointer; color: var(--muted); font-size: 1.1rem; }
+</style>
+</head>
+<body>
+
+<div id="loginView">
+  <div class="login-brand">
+    <div class="logo-mark">IM</div>
+    <h1>Innova Medical</h1>
+    <p>ადმინის პანელი</p>
+  </div>
+  <div class="login-card">
+    <div class="field">
+      <label>მომხმარებელი</label>
+      <input type="text" id="adminUsername" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>პაროლი</label>
+      <input type="password" id="adminPassword" autocomplete="current-password">
+    </div>
+    <button class="btn" onclick="doAdminLogin()">შესვლა</button>
+    <div class="error-msg" id="loginError"></div>
+  </div>
+</div>
+
+<div id="appView">
+  <div class="topbar">
+    <div class="brand"><span class="logo-mark">IM</span> ადმინის პანელი</div>
+    <div class="logout" onclick="doAdminLogout()">გასვლა 🚪</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="features" onclick="setTab('features')">ფუნქციები</div>
+    <div class="tab" data-tab="groups" onclick="setTab('groups')">პაციენტთა ჯგუფები</div>
+  </div>
+
+  <div class="container">
+
+    <div id="tab-features">
+      <div class="card">
+        <h3>ფუნქციების ჩართვა/გამორთვა</h3>
+        <p class="sub">გლობალური გადამრთველი ეხება ყველა პაციენტს, გარდა იმ ჯგუფებისა, რომლებზეც ცალკე override დაყენებულია.</p>
+        <div id="featuresList"><div class="empty">იტვირთება...</div></div>
+      </div>
+    </div>
+
+    <div id="tab-groups" style="display:none;">
+      <div class="card">
+        <h3>ახალი ჯგუფი</h3>
+        <div class="new-row">
+          <input type="text" id="newGroupName" placeholder="მაგ. VIP პაციენტები">
+          <button class="btn accent small" onclick="createGroup()">დამატება</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>ჯგუფები</h3>
+        <div id="groupsList"><div class="empty">იტვირთება...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-back" id="groupModalBack">
+  <div class="modal">
+    <span class="modal-close" onclick="closeGroupModal()">✕</span>
+    <h3 id="groupModalTitle">ჯგუფი</h3>
+    <div class="new-row" style="margin-bottom: 14px;">
+      <select id="memberSource" style="max-width: 110px;">
+        <option value="terra">Terra (login)</option>
+        <option value="onec">1C (პირადი №)</option>
+      </select>
+      <input type="text" id="memberIdentifier" placeholder="LOGIN ან პირადი ნომერი">
+      <button class="btn small" onclick="addMember()">დამატება</button>
+    </div>
+    <div id="memberList"><div class="empty">იტვირთება...</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "";
+let token = sessionStorage.getItem("admin_token") || "";
+let featuresCache = [];
+let groupsCache = [];
+let activeGroupId = null;
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(API + path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: "Bearer " + token } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  if (res.status === 401) {
+    doAdminLogout();
+    throw new Error("სესია ვადაგასულია");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || "შეცდომა");
+  return data;
+}
+
+async function doAdminLogin() {
+  const username = document.getElementById("adminUsername").value.trim();
+  const password = document.getElementById("adminPassword").value;
+  const errBox = document.getElementById("loginError");
+  errBox.style.display = "none";
+  try {
+    const data = await api("/api/admin/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
+    token = data.token;
+    sessionStorage.setItem("admin_token", token);
+    showApp();
+  } catch (e) {
+    errBox.textContent = e.message || "ავტორიზაცია ვერ მოხერხდა";
+    errBox.style.display = "block";
+  }
+}
+
+function doAdminLogout() {
+  token = "";
+  sessionStorage.removeItem("admin_token");
+  document.getElementById("appView").style.display = "none";
+  document.getElementById("loginView").style.display = "flex";
+}
+
+function showApp() {
+  document.getElementById("loginView").style.display = "none";
+  document.getElementById("appView").style.display = "block";
+  loadFeatures();
+  loadGroups();
+}
+
+function setTab(name) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+  document.getElementById("tab-features").style.display = name === "features" ? "block" : "none";
+  document.getElementById("tab-groups").style.display = name === "groups" ? "block" : "none";
+}
+
+// ---------- FEATURES ----------
+
+async function loadFeatures() {
+  featuresCache = await api("/api/admin/features");
+  if (!groupsCache.length) {
+    try { groupsCache = await api("/api/admin/groups"); } catch (e) {}
+  }
+  renderFeatures();
+}
+
+function renderFeatures() {
+  const box = document.getElementById("featuresList");
+  if (!featuresCache.length) { box.innerHTML = '<div class="empty">ფუნქციები ვერ მოიძებნა</div>'; return; }
+
+  box.innerHTML = featuresCache.map(f => `
+    <div class="flag-row">
+      <div>
+        <div class="label">${escapeHtml(f.label)}</div>
+        <div class="key">${escapeHtml(f.feature_key)}</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" ${f.enabled ? "checked" : ""} onchange="toggleFeature('${f.feature_key}', this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="overrides-toggle" onclick="toggleOverridesBox('${f.feature_key}')">
+      ჯგუფის override-ები (${f.overrides.length}) ▾
+    </div>
+    <div class="overrides-box" id="overrides-${f.feature_key}">
+      ${f.overrides.length ? f.overrides.map(o => `
+        <div class="override-item">
+          <span class="name">${escapeHtml(o.group_name)} — ${o.enabled ? "ჩართული" : "გამორთული"}</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <label class="switch" style="width:36px; height:20px;">
+              <input type="checkbox" ${o.enabled ? "checked" : ""} onchange="setOverride('${f.feature_key}', ${o.group_id}, this.checked)">
+              <span class="slider"></span>
+            </label>
+            <a onclick="removeOverride('${f.feature_key}', ${o.group_id})" style="cursor:pointer; color: var(--danger); font-size:0.8rem;">წაშლა</a>
+          </div>
+        </div>
+      `).join("") : '<div class="empty">override არ არის — გლობალური მნიშვნელობა მოქმედებს</div>'}
+      <div class="add-override-row">
+        <select id="override-group-${f.feature_key}">
+          ${groupsCache.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join("") || '<option disabled>ჯგუფი არ არსებობს</option>'}
+        </select>
+        <button class="btn small" onclick="addOverride('${f.feature_key}')">დამატება (ჩართული)</button>
+        <button class="btn small ghost" onclick="addOverride('${f.feature_key}', false)">დამატება (გამორთული)</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function toggleOverridesBox(key) {
+  const el = document.getElementById("overrides-" + key);
+  el.style.display = el.style.display === "block" ? "none" : "block";
+}
+
+async function toggleFeature(key, enabled) {
+  try {
+    await api("/api/admin/features/" + encodeURIComponent(key), {
+      method: "PUT",
+      body: JSON.stringify({ enabled }),
+    });
+    showToast(enabled ? "ჩართულია" : "გამორთულია");
+    loadFeatures();
+  } catch (e) {
+    showToast(e.message);
+    loadFeatures();
+  }
+}
+
+async function addOverride(key, enabled = true) {
+  const sel = document.getElementById("override-group-" + key);
+  if (!sel || !sel.value) { showToast("ჯერ შექმენით ჯგუფი"); return; }
+  await api(`/api/admin/features/${encodeURIComponent(key)}/overrides/${sel.value}`, {
+    method: "PUT",
+    body: JSON.stringify({ enabled }),
+  });
+  showToast("override დამატებულია");
+  loadFeatures();
+}
+
+async function setOverride(key, groupId, enabled) {
+  await api(`/api/admin/features/${encodeURIComponent(key)}/overrides/${groupId}`, {
+    method: "PUT",
+    body: JSON.stringify({ enabled }),
+  });
+  showToast("განახლდა");
+  loadFeatures();
+}
+
+async function removeOverride(key, groupId) {
+  await api(`/api/admin/features/${encodeURIComponent(key)}/overrides/${groupId}`, { method: "DELETE" });
+  showToast("override წაშლილია");
+  loadFeatures();
+}
+
+// ---------- GROUPS ----------
+
+async function loadGroups() {
+  groupsCache = await api("/api/admin/groups");
+  renderGroups();
+}
+
+function renderGroups() {
+  const box = document.getElementById("groupsList");
+  if (!groupsCache.length) { box.innerHTML = '<div class="empty">ჯგუფი ჯერ არ არის შექმნილი</div>'; return; }
+  box.innerHTML = groupsCache.map(g => `
+    <div class="group-card">
+      <div>
+        <div class="group-name">${escapeHtml(g.name)}</div>
+        <div class="group-count">${g.member_count} წევრი</div>
+      </div>
+      <div class="group-actions">
+        <a onclick="openGroupModal(${g.id}, '${escapeHtml(g.name).replace(/'/g, "\\'")}')">წევრები</a>
+        <a onclick="deleteGroup(${g.id})" style="color: var(--danger);">წაშლა</a>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function createGroup() {
+  const input = document.getElementById("newGroupName");
+  const name = input.value.trim();
+  if (!name) return;
+  await api("/api/admin/groups", { method: "POST", body: JSON.stringify({ name }) });
+  input.value = "";
+  showToast("ჯგუფი შეიქმნა");
+  loadGroups();
+  loadFeatures();
+}
+
+async function deleteGroup(id) {
+  if (!confirm("წავშალო ეს ჯგუფი? ყველა override და წევრი წაიშლება.")) return;
+  await api("/api/admin/groups/" + id, { method: "DELETE" });
+  showToast("ჯგუფი წაშლილია");
+  loadGroups();
+  loadFeatures();
+}
+
+function openGroupModal(id, name) {
+  activeGroupId = id;
+  document.getElementById("groupModalTitle").textContent = "ჯგუფი: " + name;
+  document.getElementById("memberIdentifier").value = "";
+  document.getElementById("groupModalBack").classList.add("show");
+  loadMembers();
+}
+
+function closeGroupModal() {
+  document.getElementById("groupModalBack").classList.remove("show");
+  activeGroupId = null;
+}
+
+async function loadMembers() {
+  const box = document.getElementById("memberList");
+  box.innerHTML = '<div class="empty">იტვირთება...</div>';
+  const members = await api(`/api/admin/groups/${activeGroupId}/members`);
+  if (!members.length) { box.innerHTML = '<div class="empty">წევრი არ არის</div>'; return; }
+  box.innerHTML = members.map(m => `
+    <div class="member-row">
+      <div><span class="src-badge">${m.source === "onec" ? "1C" : "Terra"}</span>${escapeHtml(m.display_name || m.subject_ref)}</div>
+      <a onclick="removeMember(${m.id})" style="cursor:pointer; color: var(--danger);">წაშლა</a>
+    </div>
+  `).join("");
+}
+
+async function addMember() {
+  const source = document.getElementById("memberSource").value;
+  const identifier = document.getElementById("memberIdentifier").value.trim();
+  if (!identifier) return;
+  try {
+    const r = await api(`/api/admin/groups/${activeGroupId}/members`, {
+      method: "POST",
+      body: JSON.stringify({ source, identifier }),
+    });
+    showToast("დაემატა: " + r.full_name);
+    document.getElementById("memberIdentifier").value = "";
+    loadMembers();
+    loadGroups();
+  } catch (e) {
+    showToast(e.message);
+  }
+}
+
+async function removeMember(memberId) {
+  await api(`/api/admin/groups/${activeGroupId}/members/${memberId}`, { method: "DELETE" });
+  showToast("წევრი წაშლილია");
+  loadMembers();
+  loadGroups();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && document.getElementById("loginView").style.display !== "none") doAdminLogin();
+});
+
+if (token) showApp();
+</script>
+</body>
+</html>
