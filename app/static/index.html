@@ -505,6 +505,13 @@
         <li class="nav-item" data-page="radiology" onclick="setActivePage('radiology')">
           <span class="nav-icon">📷</span> რადიოლოგიური პასუხები
         </li>
+        <!-- დროებით დამალულია (მოთხოვნით) — ხელახლა საჩვენებლად წაშალეთ style="display:none;" -->
+        <li class="nav-item" data-page="forma100" onclick="setActivePage('forma100')" style="display:none;">
+          <span class="nav-icon">📋</span> ფორმა 100
+        </li>
+        <li class="nav-item" data-page="prescriptions" onclick="setActivePage('prescriptions')">
+          <span class="nav-icon">💊</span> დანიშნულებები
+        </li>
         <li class="nav-item" data-page="history" onclick="setActivePage('history')">
           <span class="nav-icon">🕒</span> ისტორია
         </li>
@@ -579,6 +586,18 @@
         <div class="page" id="page-radiology">
           <div class="section-title">რადიოლოგიური პასუხები</div>
           <div id="radiologyContent"></div>
+        </div>
+
+        <!-- FORMA 100 -->
+        <div class="page" id="page-forma100">
+          <div class="section-title">ფორმა 100</div>
+          <div id="forma100Content"></div>
+        </div>
+
+        <!-- PRESCRIPTIONS -->
+        <div class="page" id="page-prescriptions">
+          <div class="section-title">დანიშნულებები</div>
+          <div id="prescriptionsContent"></div>
         </div>
 
         <!-- HISTORY (ყველა კატეგორია, სრული ისტორია) -->
@@ -855,6 +874,8 @@ function onSearchInput() {
   const activePage = document.querySelector(".page.active").id;
   if (activePage === "page-lab") renderLabPage(filterByQuery(allResults, q));
   else if (activePage === "page-radiology") renderRadiologyPage(filterByQuery(allResults, q));
+  else if (activePage === "page-forma100") renderForma100Page(filterByQuery(allResults, q));
+  else if (activePage === "page-prescriptions") renderPrescriptionsPage(filterByQuery(allResults, q));
   else if (activePage === "page-history") renderHistoryPage(filterByQuery(allResults, q));
 }
 function filterByQuery(results, q) {
@@ -875,6 +896,8 @@ async function loadResults() {
     renderDashboard(allResults);
     renderLabPage(allResults);
     renderRadiologyPage(allResults);
+    renderForma100Page(allResults);
+    renderPrescriptionsPage(allResults);
     renderHistoryPage(allResults);
   } catch (err) {
     document.getElementById("labContent").innerHTML = '<div class="empty-state">შედეგების ჩატვირთვა ვერ მოხერხდა. სცადეთ გვერდის განახლება.</div>';
@@ -906,7 +929,10 @@ function panelStatusBadge(panel) {
 
 /* ---------- DASHBOARD ---------- */
 function renderDashboard(results) {
-  const panels = groupIntoPanels(results);
+  // ფორმა 100 დროებით დამალულია — დეშბორდზეც არ გამოჩნდეს
+  // "ბოლო შეტყობინება"/"ბოლო შედეგები" სახით.
+  const visibleResults = results.filter(r => r.category !== "forma_100");
+  const panels = groupIntoPanels(visibleResults);
 
   const notifEl = document.getElementById("dashboardNotif");
   if (panels.length > 0) {
@@ -979,8 +1005,36 @@ function renderRadiologyPage(results) {
     `;
 }
 
+function renderForma100Page(results) {
+  const only = results.filter(r => r.category === "forma_100");
+  document.getElementById("forma100Content").innerHTML = only.length
+    ? renderDateGroupedAccordion(only, "forma100Empty")
+    : `
+      <div class="placeholder-card">
+        <div class="icon">📋</div>
+        <div>ფორმა 100 დოკუმენტები ჯერ არ არის ხელმისაწვდომი</div>
+      </div>
+    `;
+}
+
+function renderPrescriptionsPage(results) {
+  const only = results.filter(r => r.category === "prescription");
+  document.getElementById("prescriptionsContent").innerHTML = only.length
+    ? renderDateGroupedAccordion(only, "prescriptionsEmpty")
+    : `
+      <div class="placeholder-card">
+        <div class="icon">💊</div>
+        <div>დანიშნულებები ჯერ არ არის ხელმისაწვდომი</div>
+      </div>
+    `;
+}
+
 function renderHistoryPage(results) {
-  document.getElementById("historyContent").innerHTML = renderDateGroupedAccordion(results, "historyEmpty");
+  // ფორმა 100 დროებით დამალულია მენიუდან — იმავე მიზეზით, ისტორიის
+  // გვერდიდანაც გამოვრიცხავთ, სანამ ხელახლა არ ჩაირთვება (იხ. sidebar-ის
+  // "display:none" კომენტარი ზემოთ).
+  const visible = results.filter(r => r.category !== "forma_100");
+  document.getElementById("historyContent").innerHTML = renderDateGroupedAccordion(visible, "historyEmpty");
 }
 
 function renderDateGroupedAccordion(results, emptyId) {
@@ -1013,7 +1067,7 @@ function renderDateGroupedAccordion(results, emptyId) {
 
     const panelsHtml = panelOrder.map(key => {
       const panel = panelGroups[key];
-      const isNarrative = panel.items.every(r => r.category === "radiology");
+      const isNarrative = panel.items.every(r => r.category === "radiology" || (r.blocks && r.blocks.length) || r.blocks !== undefined);
 
       const pdfButton = panel.groupId
         ? `<button class="pdf-action" onclick="downloadReport('${panel.groupId}', this)">📄 PDF ჩამოტვირთვა</button>` : "";
