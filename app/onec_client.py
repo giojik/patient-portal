@@ -93,11 +93,44 @@ def find_patient_by_personal_id(personal_id: str):
     return {"ref_key": kartoteka_ref, "full_name": full_name, "phone": phone}
 
 
+_personal_id_cache = {}
+
+
+def get_personal_id_by_kartoteka(kartoteka_ref: str) -> str:
+    """
+    საპირისპირო ძებნა Catalog_Картотека Ref_Key-დან პირად ნომერზე —
+    იგივე InformationRegister_ПаспортныеДанныеПациентов_RecordType რეესტრი,
+    რასაც find_patient_by_personal_id იყენებს, უბრალოდ საწინააღმდეგო
+    მიმართულებით (Пациент_Key-ით ვფილტრავთ, არა ДокументНомер-ით).
+    """
+    if kartoteka_ref in _personal_id_cache:
+        return _personal_id_cache[kartoteka_ref]
+
+    personal_id = ""
+    try:
+        data = _get(
+            "InformationRegister_ПаспортныеДанныеПациентов_RecordType",
+            params={
+                "$filter": f"Пациент_Key eq guid'{kartoteka_ref}'",
+                "$format": "json",
+            },
+        )
+        rows = data.get("value", [])
+        if rows:
+            personal_id = rows[0].get("ДокументНомер", "") or ""
+    except requests.exceptions.RequestException:
+        pass
+
+    _personal_id_cache[kartoteka_ref] = personal_id
+    return personal_id
+
+
 # ============ შედეგების წამოღება (Document_МедицинскийДокумент) ============
 
 _indicator_name_cache = {}
 _unit_name_cache = {}
 _nomenclature_name_cache = {}
+_template_name_cache = {}
 
 _EMPTY_GUID = "00000000-0000-0000-0000-000000000000"
 
@@ -124,6 +157,10 @@ def _get_unit_name(key: str) -> str:
 
 def _get_nomenclature_name(key: str) -> str:
     return _cached_lookup(_nomenclature_name_cache, "Catalog_Номенклатура", key)
+
+
+def _get_template_name(key: str) -> str:
+    return _cached_lookup(_template_name_cache, "Catalog_ШаблоныМедицинскихДокументов", key)
 
 
 def _to_float(value):
@@ -153,21 +190,62 @@ def _compute_status(value, low, high, is_out_of_norm) -> str:
 
 RADIOLOGY_KEYWORDS = [
     "ულტრაბგერითი", "ტომოგრაფია", "რენტგენ", "მამოგრაფ",
-    "მრტ", "ექოსკოპ", "ანგიოგრაფ", "რენტგენოგრაფ",
-    "xray", "x-ray", "ct ", "mri", "ultrasound", "ultra sound",
+    "მრტ", "ექოსკოპ", "ანგიოგრაფ", "რენტგენოგრაფ", "კარდიოგრაფ",
+    "ენდოსკოპ", "სკოპია", "დუპლექს",
+    "xray", "x-ray", "ct ", "mri", "ultrasound", "ultra sound", "ecg",
+]
+
+# კონკრეტული, ცალსახა შაბლონის სახელები (substring-ით), დალაგებული
+# specificity-ის მიხედვით — ზოგადი keyword-ები (ეპიკრიზი, ოპერაცია)
+# რომ არასწორად არ დაემთხვეს სპეციფიკურ ტიპებს, კონკრეტული ჯერ მოწმდება.
+#
+# კატეგორიები, რომლებიც პაციენტს უნდა უჩვენდეს ნაგულისხმევად:
+#   forma100, lab, radiology, prescription, discharge_recommendation, consultation
+# კატეგორიები, რომლებიც პაციენტს არ უნდა უჩვენდეს ნაგულისხმევად
+# (ადმინს შეუძლია ეს ჩართოს feature_flags-იდან):
+#   exam_diary, discharge_epicrisis, preop_epicrisis, anesthesia_protocol,
+#   operation_protocol, admitting_doctor_note, surgical_team
+_TEMPLATE_KEYWORD_RULES = [
+    ("100/ა", "forma100"),
+    ("100/a", "forma100"),
+    ("პაციენტის გასინჯვის ფურცელი", "exam_diary"),
+    ("გასინჯვის ფურცელი", "exam_diary"),
+    ("გაწერის ეპიკრიზი", "discharge_epicrisis"),
+    ("წინასაოპერაციო ეპიკრიზი", "preop_epicrisis"),
+    ("ეპიკრიზი", "discharge_epicrisis"),  # უცნობი ეპიკრიზის ვარიანტები — უსაფრთხოებისთვის დამალული
+    ("გაუტკივარების ოქმი", "anesthesia_protocol"),
+    ("საოპერაციო ბრიგადა", "surgical_team"),
+    ("ოპერაციის ოქმი", "operation_protocol"),
+    ("ჩარევის ოქმი", "operation_protocol"),
+    ("მიმღები", "admitting_doctor_note"),  # "მიმღები (მორიგე) მკურნალი ექიმის ჩანაწერი..."
+    ("რეკომენდაციები გაწერისას", "discharge_recommendation"),
+    ("მომსახურებების დანიშვნა", "prescription"),
+    ("დანიშნულების ფურცელი", "prescription"),
+    ("კონსულტაცია", "consultation"),
 ]
 
 
-def _classify_category(panel_name: str) -> str:
+def _classify_category(template_name: str, panel_name: str = None) -> str:
     """
-    Catalog_ШаблоныМедицинскихДокументов-ის საქაღალდეები ლაბ./რადიოლ.-ს
-    სუფთად არ ყოფენ (ერთი საერთო "ინსტრუმენტული კვლევების" საქაღალდეა),
-    ამიტომ ვიყენებთ keyword-based კლასიფიკაციას პანელის სახელზე.
+    კატეგორიის კლასიფიკაცია, უპირატესად დოკუმენტის შაბლონის სახელით
+    (Catalog_ШаблоныМедицинскихДокументов.Description) — ეს ცალსახად
+    განასხვავებს დოკუმენტის ტიპს (ეპიკრიზი, ოქმი, ფორმა 100 და ა.შ.),
+    ნაცვლად ადრინდელი მიდგომისა, სადაც მხოლოდ პანელის/მომსახურების
+    სახელი გამოიყენებოდა (რაც ვერ ასხვავებდა ამ ტიპებს ერთმანეთისგან).
+
+    panel_name — fallback, თუ შაბლონის სახელი ცარიელია/უცნობია.
     """
-    name = (panel_name or "").lower()
+    name = template_name or panel_name or ""
+    lname = name.lower()
+
+    for keyword, category in _TEMPLATE_KEYWORD_RULES:
+        if keyword in name:
+            return category
+
     for kw in RADIOLOGY_KEYWORDS:
-        if kw.lower() in name:
+        if kw in lname:
             return "radiology"
+
     return "lab"
 
 
@@ -289,23 +367,27 @@ def _document_to_results(doc: dict) -> list:
     if services:
         panel_name = _get_nomenclature_name(services[0].get("Номенклатура_Key"))
 
-    category = _classify_category(panel_name)
+    template_name = _get_template_name(doc.get("ШаблонМедицинскогоДокумента_Key"))
+    category = _classify_category(template_name, panel_name)
 
     health_indicators = doc.get("ПоказателиЗдоровья", [])
+    is_narrative = not health_indicators
 
     items = []
 
-    if not health_indicators:
-        # ЛПоказателиЗдоровья ცარიელია — ეს ჩვეულებრივ ნიშნავს, რომ ეს
-        # რადიოლოგიური/ინსტრუმენტული კვლევაა თხრობითი დასკვნით (CDA)
+    if is_narrative:
+        # ЛПоказателиЗдоровья ცარიელია — ეს ნიშნავს, რომ ეს თხრობითი
+        # ტიპის დოკუმენტია (CDA), მიუხედავად კონკრეტული კატეგორიისა
+        # (რადიოლოგია, ეპიკრიზი, ოქმი, ფორმა 100, კონსულტაცია და ა.შ.)
         cda_key = doc.get("CDAДокумент_Key")
         sections = get_cda_narrative(cda_key)
         for section in sections:
             title = section["title"] or "დასკვნა"
             items.append({
                 "panel_group_id": doc_ref,
-                "panel_name": panel_name or title,
+                "panel_name": panel_name or template_name or title,
                 "category": category,
+                "is_narrative": True,
                 "test_name": title,
                 "result_value": section["text"],
                 "blocks": section.get("blocks", []),
@@ -329,6 +411,7 @@ def _document_to_results(doc: dict) -> list:
             "panel_group_id": doc_ref,
             "panel_name": panel_name or test_name,
             "category": category,
+            "is_narrative": False,
             "test_name": test_name,
             "result_value": value,
             "unit": unit,
@@ -390,7 +473,7 @@ def get_panel_by_id(document_ref: str, expected_kartoteka_ref: str):
     except (ValueError, TypeError):
         pass
 
-    is_narrative = items[0]["category"] == "radiology"
+    is_narrative = items[0]["is_narrative"]
 
     return {
         "panel_name": items[0]["panel_name"],

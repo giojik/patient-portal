@@ -15,10 +15,7 @@
     --text: #1f2b3a;
     --muted: #6b7684;
     --danger: #c0392b;
-    --success-bg: #e5f5ea;
     --success-text: #1e8a4c;
-    --warn-bg: #fff1e5;
-    --warn-text: #c25b00;
     --border: #e6e9ec;
   }
   * { box-sizing: border-box; }
@@ -27,9 +24,6 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--bg); color: var(--text);
   }
-  a { color: inherit; }
-
-  /* ---------- LOGIN ---------- */
   #loginView {
     min-height: 100vh; display: flex; flex-direction: column;
     align-items: center; justify-content: center; padding: 24px;
@@ -55,19 +49,16 @@
   }
   .field input:focus, .field select:focus { outline: none; border-color: var(--primary); }
   .btn {
-    width: 100%; padding: 12px; border: none; border-radius: 10px;
-    background: var(--primary); color: #fff; font-weight: 700; font-size: 0.95rem;
+    padding: 12px 18px; border: none; border-radius: 10px;
+    background: var(--primary); color: #fff; font-weight: 700; font-size: 0.9rem;
     cursor: pointer; transition: background 0.15s;
   }
+  .btn.block { width: 100%; }
   .btn:hover { background: var(--primary-light); }
-  .btn.accent { background: var(--accent); }
-  .btn.accent:hover { background: var(--accent-dark); }
-  .btn.small { width: auto; padding: 8px 14px; font-size: 0.85rem; }
-  .btn.ghost { background: transparent; color: var(--danger); border: 1px solid var(--border); }
+  .btn.ghost { background: transparent; color: var(--danger); border: 1px solid var(--border); padding: 8px 14px; font-size: 0.82rem; }
   .btn.ghost:hover { background: #fbeceb; }
+  .btn.small { padding: 8px 14px; font-size: 0.82rem; }
   .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 10px; text-align: center; display: none; }
-
-  /* ---------- APP SHELL ---------- */
   #appView { display: none; min-height: 100vh; }
   .topbar {
     background: var(--primary); color: #fff; padding: 14px 24px;
@@ -80,33 +71,28 @@
   }
   .topbar .logout { cursor: pointer; opacity: 0.85; font-size: 0.85rem; }
   .topbar .logout:hover { opacity: 1; }
-
   .tabs {
     display: flex; gap: 4px; background: #fff; border-bottom: 1px solid var(--border);
-    padding: 0 24px;
+    padding: 0 24px; overflow-x: auto;
   }
   .tab {
-    padding: 14px 18px; font-size: 0.9rem; font-weight: 600; color: var(--muted);
-    cursor: pointer; border-bottom: 3px solid transparent;
+    padding: 14px 16px; font-size: 0.88rem; font-weight: 600; color: var(--muted);
+    cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap;
   }
   .tab.active { color: var(--primary); border-bottom-color: var(--accent); }
-
-  .container { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
+  .container { max-width: 780px; margin: 0 auto; padding: 28px 20px 60px; }
   .card {
     background: var(--card-bg); border-radius: 14px; border: 1px solid var(--border);
-    padding: 20px; margin-bottom: 16px;
+    padding: 20px; margin-bottom: 20px;
   }
-  .card h3 { margin: 0 0 4px; font-size: 1.02rem; color: var(--primary); }
-  .card .sub { color: var(--muted); font-size: 0.82rem; margin: 0 0 14px; }
-
+  .card h3 { margin: 0 0 4px; font-size: 1.05rem; color: var(--primary); }
+  .card .sub { color: var(--muted); font-size: 0.83rem; margin: 0 0 14px; }
   .flag-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 0; border-bottom: 1px solid var(--border);
+    padding: 13px 0; border-bottom: 1px solid var(--border);
   }
   .flag-row:last-child { border-bottom: none; }
   .flag-row .label { font-weight: 600; font-size: 0.95rem; }
-  .flag-row .key { color: var(--muted); font-size: 0.78rem; font-family: monospace; }
-
   .switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .switch .slider {
@@ -119,33 +105,6 @@
   }
   .switch input:checked + .slider { background: var(--success-text); }
   .switch input:checked + .slider::before { transform: translateX(20px); }
-
-  .overrides-toggle { font-size: 0.8rem; color: var(--accent-dark); cursor: pointer; font-weight: 600; margin-top: 6px; }
-  .overrides-box { margin-top: 10px; padding: 12px; background: var(--bg); border-radius: 10px; display: none; }
-  .override-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 0; font-size: 0.85rem;
-  }
-  .override-item .name { font-weight: 600; }
-  .add-override-row { display: flex; gap: 8px; margin-top: 10px; }
-  .add-override-row select { flex: 1; }
-
-  .group-card { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
-  .group-card:last-child { border-bottom: none; }
-  .group-name { font-weight: 700; }
-  .group-count { color: var(--muted); font-size: 0.8rem; }
-  .group-actions { display: flex; gap: 8px; }
-  .group-actions a { font-size: 0.85rem; font-weight: 600; color: var(--primary); cursor: pointer; }
-
-  .new-row { display: flex; gap: 10px; margin-top: 6px; }
-  .new-row input, .new-row select { flex: 1; }
-
-  .member-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
-  .member-row:last-child { border-bottom: none; }
-  .member-row .src-badge {
-    font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
-    background: var(--warn-bg); color: var(--warn-text); margin-right: 8px;
-  }
   .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
     background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 10px;
@@ -154,14 +113,23 @@
   }
   .toast.show { opacity: 1; }
   .empty { color: var(--muted); font-size: 0.85rem; padding: 10px 0; }
-  .modal-back {
-    display: none; position: fixed; inset: 0; background: rgba(14,35,64,0.45);
-    align-items: center; justify-content: center; z-index: 100;
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .user-row, .audit-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; gap: 10px;
   }
-  .modal-back.show { display: flex; }
-  .modal { background: #fff; border-radius: 14px; padding: 24px; width: 92%; max-width: 480px; max-height: 80vh; overflow-y: auto; }
-  .modal h3 { margin-top: 0; }
-  .modal-close { float: right; cursor: pointer; color: var(--muted); font-size: 1.1rem; }
+  .user-row:last-child, .audit-row:last-child { border-bottom: none; }
+  .role-badge {
+    font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: #eef1f4; color: var(--primary); text-transform: uppercase;
+  }
+  .audit-meta { color: var(--muted); font-size: 0.78rem; }
+  .new-user-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .new-user-row input { flex: 1; min-width: 120px; }
+  .placeholder-box {
+    text-align: center; padding: 40px 20px; color: var(--muted);
+  }
 </style>
 </head>
 <body>
@@ -181,7 +149,7 @@
       <label>პაროლი</label>
       <input type="password" id="adminPassword" autocomplete="current-password">
     </div>
-    <button class="btn" onclick="doAdminLogin()">შესვლა</button>
+    <button class="btn block" onclick="doAdminLogin()">შესვლა</button>
     <div class="error-msg" id="loginError"></div>
   </div>
 </div>
@@ -192,61 +160,110 @@
     <div class="logout" onclick="doAdminLogout()">გასვლა 🚪</div>
   </div>
   <div class="tabs">
-    <div class="tab active" data-tab="features" onclick="setTab('features')">ფუნქციები</div>
-    <div class="tab" data-tab="groups" onclick="setTab('groups')">პაციენტთა ჯგუფები</div>
+    <div class="tab active" data-tab="home" onclick="setTab('home')">მთავარი</div>
+    <div class="tab" data-tab="features" onclick="setTab('features')">ფუნქციები</div>
+    <div class="tab" data-tab="users" id="usersTabBtn" onclick="setTab('users')">მომხმარებლები</div>
+    <div class="tab" data-tab="audit" id="auditTabBtn" onclick="setTab('audit')">აუდიტ ლოგი</div>
+    <div class="tab" data-tab="templates" onclick="setTab('templates')">შაბლონები</div>
   </div>
 
   <div class="container">
 
-    <div id="tab-features">
+    <div id="tab-home">
       <div class="card">
-        <h3>ფუნქციების ჩართვა/გამორთვა</h3>
-        <p class="sub">გლობალური გადამრთველი ეხება ყველა პაციენტს, გარდა იმ ჯგუფებისა, რომლებზეც ცალკე override დაყენებულია.</p>
-        <div id="featuresList"><div class="empty">იტვირთება...</div></div>
+        <h3>კლინიკის პარამეტრები</h3>
+        <p class="sub">ეს ინფორმაცია ზოგადია კლინიკისთვის (მომავალში პორტალშიც გამოჩნდება).</p>
+        <div class="form-grid">
+          <div class="field">
+            <label>სასაათო სარტყელი</label>
+            <input type="text" id="setTimezone" placeholder="Asia/Tbilisi">
+          </div>
+          <div class="field">
+            <label>კლინიკის სახელი</label>
+            <input type="text" id="setClinicName" placeholder="Innova Medical">
+          </div>
+          <div class="field full">
+            <label>მისამართი</label>
+            <input type="text" id="setAddress" placeholder="ქ. თბილისი, ...">
+          </div>
+          <div class="field">
+            <label>საიტის მისამართი</label>
+            <input type="text" id="setWebsite" placeholder="https://...">
+          </div>
+          <div class="field">
+            <label>ელ. ფოსტა</label>
+            <input type="email" id="setEmail" placeholder="info@...">
+          </div>
+        </div>
+        <button class="btn" id="saveSettingsBtn" onclick="saveSettings()">შენახვა</button>
+        <p class="sub" id="settingsReadOnlyNote" style="display:none; margin-top:8px;">მხოლოდ superadmin-ს შეუძლია პარამეტრების შეცვლა.</p>
       </div>
     </div>
 
-    <div id="tab-groups" style="display:none;">
+    <div id="tab-features" style="display:none;">
       <div class="card">
-        <h3>ახალი ჯგუფი</h3>
-        <div class="new-row">
-          <input type="text" id="newGroupName" placeholder="მაგ. VIP პაციენტები">
-          <button class="btn accent small" onclick="createGroup()">დამატება</button>
+        <h3>ხილული პაციენტისთვის</h3>
+        <p class="sub">ეს დოკუმენტები ჩანს ყველა პაციენტის პორტალში.</p>
+        <div id="shownList"><div class="empty">იტვირთება...</div></div>
+      </div>
+      <div class="card">
+        <h3>დამალული პაციენტისთვის</h3>
+        <p class="sub">ეს დოკუმენტები არ ჩანს პაციენტთან. ჩართეთ, თუ გინდათ გაუზიაროთ.</p>
+        <div id="hiddenList"><div class="empty">იტვირთება...</div></div>
+      </div>
+    </div>
+
+    <div id="tab-users" style="display:none;">
+      <div class="card">
+        <h3>ახალი მომხმარებელი</h3>
+        <p class="sub">ადმინის პანელზე წვდომის ანგარიშები, როლებით.</p>
+        <div class="new-user-row">
+          <input type="text" id="newUserName" placeholder="მომხმარებელი">
+          <input type="password" id="newUserPass" placeholder="პაროლი (მინ. 8 სიმბოლო)">
+          <select id="newUserRole">
+            <option value="viewer">viewer — მხოლოდ კონფიგურაციის ნახვა</option>
+            <option value="manager">manager — კონფიგურაცია + აუდიტ ლოგი</option>
+            <option value="superadmin">superadmin — სრული წვდომა</option>
+          </select>
+          <button class="btn small" onclick="createUser()">დამატება</button>
         </div>
       </div>
       <div class="card">
-        <h3>ჯგუფები</h3>
-        <div id="groupsList"><div class="empty">იტვირთება...</div></div>
+        <h3>არსებული მომხმარებლები</h3>
+        <div id="usersList"><div class="empty">იტვირთება...</div></div>
       </div>
     </div>
 
-  </div>
-</div>
-
-<div class="modal-back" id="groupModalBack">
-  <div class="modal">
-    <span class="modal-close" onclick="closeGroupModal()">✕</span>
-    <h3 id="groupModalTitle">ჯგუფი</h3>
-    <div class="new-row" style="margin-bottom: 14px;">
-      <select id="memberSource" style="max-width: 110px;">
-        <option value="terra">Terra (login)</option>
-        <option value="onec">1C (პირადი №)</option>
-      </select>
-      <input type="text" id="memberIdentifier" placeholder="LOGIN ან პირადი ნომერი">
-      <button class="btn small" onclick="addMember()">დამატება</button>
+    <div id="tab-audit" style="display:none;">
+      <div class="card">
+        <h3>აუდიტ ლოგი</h3>
+        <p class="sub">ვინ შემოვიდა, საიდან (IP), და რა მოქმედება შესრულდა.</p>
+        <div id="auditList"><div class="empty">იტვირთება...</div></div>
+        <div style="text-align:center; margin-top:14px;">
+          <button class="btn small" onclick="loadMoreAudit()" id="loadMoreBtn" style="display:none;">მეტის ჩვენება</button>
+        </div>
+      </div>
     </div>
-    <div id="memberList"><div class="empty">იტვირთება...</div></div>
+
+    <div id="tab-templates" style="display:none;">
+      <div class="card">
+        <div class="placeholder-box">
+          <h3>შაბლონების ატვირთვა</h3>
+          <p>სხვადასხვა კვლევის PDF შაბლონების ატვირთვის ფუნქცია მალე დაემატება.</p>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const API = "";
 let token = sessionStorage.getItem("admin_token") || "";
-let featuresCache = [];
-let groupsCache = [];
-let activeGroupId = null;
+let myRole = sessionStorage.getItem("admin_role") || "";
+let myUsername = sessionStorage.getItem("admin_username") || "";
+let oldestAuditId = null;
 
 function showToast(msg) {
   const t = document.getElementById("toast");
@@ -256,7 +273,7 @@ function showToast(msg) {
 }
 
 async function api(path, options = {}) {
-  const res = await fetch(API + path, {
+  const res = await fetch(path, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -284,7 +301,11 @@ async function doAdminLogin() {
       body: JSON.stringify({ username, password }),
     });
     token = data.token;
+    myRole = data.role;
+    myUsername = data.username;
     sessionStorage.setItem("admin_token", token);
+    sessionStorage.setItem("admin_role", myRole);
+    sessionStorage.setItem("admin_username", myUsername);
     showApp();
   } catch (e) {
     errBox.textContent = e.message || "ავტორიზაცია ვერ მოხერხდა";
@@ -293,8 +314,10 @@ async function doAdminLogin() {
 }
 
 function doAdminLogout() {
-  token = "";
+  token = ""; myRole = ""; myUsername = "";
   sessionStorage.removeItem("admin_token");
+  sessionStorage.removeItem("admin_role");
+  sessionStorage.removeItem("admin_username");
   document.getElementById("appView").style.display = "none";
   document.getElementById("loginView").style.display = "flex";
 }
@@ -302,71 +325,90 @@ function doAdminLogout() {
 function showApp() {
   document.getElementById("loginView").style.display = "none";
   document.getElementById("appView").style.display = "block";
+  document.getElementById("usersTabBtn").style.display = myRole === "superadmin" ? "block" : "none";
+  document.getElementById("auditTabBtn").style.display = myRole === "viewer" ? "none" : "block";
+
+  const readOnly = myRole !== "superadmin";
+  ["setTimezone", "setClinicName", "setAddress", "setWebsite", "setEmail"].forEach(id => {
+    document.getElementById(id).disabled = readOnly;
+  });
+  document.getElementById("saveSettingsBtn").style.display = readOnly ? "none" : "inline-block";
+  document.getElementById("settingsReadOnlyNote").style.display = readOnly ? "block" : "none";
+
+  loadSettings();
   loadFeatures();
-  loadGroups();
+  setTab("home");
 }
 
 function setTab(name) {
+  if (name === "audit" && myRole === "viewer") return;
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
-  document.getElementById("tab-features").style.display = name === "features" ? "block" : "none";
-  document.getElementById("tab-groups").style.display = name === "groups" ? "block" : "none";
+  ["home", "features", "users", "audit", "templates"].forEach(n => {
+    document.getElementById("tab-" + n).style.display = n === name ? "block" : "none";
+  });
+  if (name === "users") loadUsers();
+  if (name === "audit") { oldestAuditId = null; loadAudit(true); }
+}
+
+// ---------- SETTINGS ----------
+
+async function loadSettings() {
+  try {
+    const s = await api("/api/admin/settings");
+    document.getElementById("setTimezone").value = s.timezone || "";
+    document.getElementById("setClinicName").value = s.clinic_name || "";
+    document.getElementById("setAddress").value = s.address || "";
+    document.getElementById("setWebsite").value = s.website || "";
+    document.getElementById("setEmail").value = s.email || "";
+  } catch (e) {
+    showToast(e.message);
+  }
+}
+
+async function saveSettings() {
+  const body = {
+    timezone: document.getElementById("setTimezone").value.trim(),
+    clinic_name: document.getElementById("setClinicName").value.trim(),
+    address: document.getElementById("setAddress").value.trim(),
+    website: document.getElementById("setWebsite").value.trim(),
+    email: document.getElementById("setEmail").value.trim(),
+  };
+  try {
+    await api("/api/admin/settings", { method: "PUT", body: JSON.stringify(body) });
+    showToast("პარამეტრები შენახულია");
+  } catch (e) {
+    showToast(e.message);
+  }
 }
 
 // ---------- FEATURES ----------
 
 async function loadFeatures() {
-  featuresCache = await api("/api/admin/features");
-  if (!groupsCache.length) {
-    try { groupsCache = await api("/api/admin/groups"); } catch (e) {}
+  const shownBox = document.getElementById("shownList");
+  const hiddenBox = document.getElementById("hiddenList");
+  try {
+    const features = await api("/api/admin/features");
+    const shown = features.filter(f => f.enabled);
+    const hidden = features.filter(f => !f.enabled);
+    shownBox.innerHTML = shown.length ? shown.map(rowHtml).join("") : '<div class="empty">არაფერია ხილული ამჟამად</div>';
+    hiddenBox.innerHTML = hidden.length ? hidden.map(rowHtml).join("") : '<div class="empty">არაფერია დამალული ამჟამად</div>';
+  } catch (e) {
+    shownBox.innerHTML = `<div class="empty">ვერ ჩაიტვირთა: ${escapeHtml(e.message)}</div>`;
+    hiddenBox.innerHTML = "";
   }
-  renderFeatures();
 }
 
-function renderFeatures() {
-  const box = document.getElementById("featuresList");
-  if (!featuresCache.length) { box.innerHTML = '<div class="empty">ფუნქციები ვერ მოიძებნა</div>'; return; }
-
-  box.innerHTML = featuresCache.map(f => `
+function rowHtml(f) {
+  const readOnly = myRole !== "superadmin";
+  return `
     <div class="flag-row">
-      <div>
-        <div class="label">${escapeHtml(f.label)}</div>
-        <div class="key">${escapeHtml(f.feature_key)}</div>
-      </div>
+      <div class="label">${escapeHtml(f.label)}</div>
       <label class="switch">
-        <input type="checkbox" ${f.enabled ? "checked" : ""} onchange="toggleFeature('${f.feature_key}', this.checked)">
+        <input type="checkbox" ${f.enabled ? "checked" : ""} ${readOnly ? "disabled" : ""} onchange="toggleFeature('${f.feature_key}', this.checked)">
         <span class="slider"></span>
       </label>
     </div>
-    <div class="overrides-toggle" onclick="toggleOverridesBox('${f.feature_key}')">
-      ჯგუფის override-ები (${f.overrides.length}) ▾
-    </div>
-    <div class="overrides-box" id="overrides-${f.feature_key}">
-      ${f.overrides.length ? f.overrides.map(o => `
-        <div class="override-item">
-          <span class="name">${escapeHtml(o.group_name)} — ${o.enabled ? "ჩართული" : "გამორთული"}</span>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <label class="switch" style="width:36px; height:20px;">
-              <input type="checkbox" ${o.enabled ? "checked" : ""} onchange="setOverride('${f.feature_key}', ${o.group_id}, this.checked)">
-              <span class="slider"></span>
-            </label>
-            <a onclick="removeOverride('${f.feature_key}', ${o.group_id})" style="cursor:pointer; color: var(--danger); font-size:0.8rem;">წაშლა</a>
-          </div>
-        </div>
-      `).join("") : '<div class="empty">override არ არის — გლობალური მნიშვნელობა მოქმედებს</div>'}
-      <div class="add-override-row">
-        <select id="override-group-${f.feature_key}">
-          ${groupsCache.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join("") || '<option disabled>ჯგუფი არ არსებობს</option>'}
-        </select>
-        <button class="btn small" onclick="addOverride('${f.feature_key}')">დამატება (ჩართული)</button>
-        <button class="btn small ghost" onclick="addOverride('${f.feature_key}', false)">დამატება (გამორთული)</button>
-      </div>
-    </div>
-  `).join("");
-}
-
-function toggleOverridesBox(key) {
-  const el = document.getElementById("overrides-" + key);
-  el.style.display = el.style.display === "block" ? "none" : "block";
+  `;
 }
 
 async function toggleFeature(key, enabled) {
@@ -375,132 +417,127 @@ async function toggleFeature(key, enabled) {
       method: "PUT",
       body: JSON.stringify({ enabled }),
     });
-    showToast(enabled ? "ჩართულია" : "გამორთულია");
-    loadFeatures();
+    showToast(enabled ? "ჩაირთო" : "გამოირთო");
   } catch (e) {
     showToast(e.message);
-    loadFeatures();
   }
-}
-
-async function addOverride(key, enabled = true) {
-  const sel = document.getElementById("override-group-" + key);
-  if (!sel || !sel.value) { showToast("ჯერ შექმენით ჯგუფი"); return; }
-  await api(`/api/admin/features/${encodeURIComponent(key)}/overrides/${sel.value}`, {
-    method: "PUT",
-    body: JSON.stringify({ enabled }),
-  });
-  showToast("override დამატებულია");
   loadFeatures();
 }
 
-async function setOverride(key, groupId, enabled) {
-  await api(`/api/admin/features/${encodeURIComponent(key)}/overrides/${groupId}`, {
-    method: "PUT",
-    body: JSON.stringify({ enabled }),
-  });
-  showToast("განახლდა");
-  loadFeatures();
-}
+// ---------- USERS ----------
 
-async function removeOverride(key, groupId) {
-  await api(`/api/admin/features/${encodeURIComponent(key)}/overrides/${groupId}`, { method: "DELETE" });
-  showToast("override წაშლილია");
-  loadFeatures();
-}
-
-// ---------- GROUPS ----------
-
-async function loadGroups() {
-  groupsCache = await api("/api/admin/groups");
-  renderGroups();
-}
-
-function renderGroups() {
-  const box = document.getElementById("groupsList");
-  if (!groupsCache.length) { box.innerHTML = '<div class="empty">ჯგუფი ჯერ არ არის შექმნილი</div>'; return; }
-  box.innerHTML = groupsCache.map(g => `
-    <div class="group-card">
-      <div>
-        <div class="group-name">${escapeHtml(g.name)}</div>
-        <div class="group-count">${g.member_count} წევრი</div>
-      </div>
-      <div class="group-actions">
-        <a onclick="openGroupModal(${g.id}, '${escapeHtml(g.name).replace(/'/g, "\\'")}')">წევრები</a>
-        <a onclick="deleteGroup(${g.id})" style="color: var(--danger);">წაშლა</a>
-      </div>
-    </div>
-  `).join("");
-}
-
-async function createGroup() {
-  const input = document.getElementById("newGroupName");
-  const name = input.value.trim();
-  if (!name) return;
-  await api("/api/admin/groups", { method: "POST", body: JSON.stringify({ name }) });
-  input.value = "";
-  showToast("ჯგუფი შეიქმნა");
-  loadGroups();
-  loadFeatures();
-}
-
-async function deleteGroup(id) {
-  if (!confirm("წავშალო ეს ჯგუფი? ყველა override და წევრი წაიშლება.")) return;
-  await api("/api/admin/groups/" + id, { method: "DELETE" });
-  showToast("ჯგუფი წაშლილია");
-  loadGroups();
-  loadFeatures();
-}
-
-function openGroupModal(id, name) {
-  activeGroupId = id;
-  document.getElementById("groupModalTitle").textContent = "ჯგუფი: " + name;
-  document.getElementById("memberIdentifier").value = "";
-  document.getElementById("groupModalBack").classList.add("show");
-  loadMembers();
-}
-
-function closeGroupModal() {
-  document.getElementById("groupModalBack").classList.remove("show");
-  activeGroupId = null;
-}
-
-async function loadMembers() {
-  const box = document.getElementById("memberList");
-  box.innerHTML = '<div class="empty">იტვირთება...</div>';
-  const members = await api(`/api/admin/groups/${activeGroupId}/members`);
-  if (!members.length) { box.innerHTML = '<div class="empty">წევრი არ არის</div>'; return; }
-  box.innerHTML = members.map(m => `
-    <div class="member-row">
-      <div><span class="src-badge">${m.source === "onec" ? "1C" : "Terra"}</span>${escapeHtml(m.display_name || m.subject_ref)}</div>
-      <a onclick="removeMember(${m.id})" style="cursor:pointer; color: var(--danger);">წაშლა</a>
-    </div>
-  `).join("");
-}
-
-async function addMember() {
-  const source = document.getElementById("memberSource").value;
-  const identifier = document.getElementById("memberIdentifier").value.trim();
-  if (!identifier) return;
+async function loadUsers() {
+  const box = document.getElementById("usersList");
   try {
-    const r = await api(`/api/admin/groups/${activeGroupId}/members`, {
-      method: "POST",
-      body: JSON.stringify({ source, identifier }),
-    });
-    showToast("დაემატა: " + r.full_name);
-    document.getElementById("memberIdentifier").value = "";
-    loadMembers();
-    loadGroups();
+    const users = await api("/api/admin/users");
+    box.innerHTML = users.length ? users.map(userRowHtml).join("") : '<div class="empty">მომხმარებელი არ არის</div>';
+  } catch (e) {
+    box.innerHTML = `<div class="empty">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function userRowHtml(u) {
+  const isMe = u.username === myUsername;
+  return `
+    <div class="user-row">
+      <div>
+        <strong>${escapeHtml(u.username)}</strong>
+        <span class="role-badge">${escapeHtml(u.role)}</span>
+        ${isMe ? '<span class="audit-meta"> (თქვენ)</span>' : ''}
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select onchange="changeUserRole(${u.id}, this.value)" ${isMe ? "disabled" : ""}>
+          <option value="viewer" ${u.role === "viewer" ? "selected" : ""}>viewer</option>
+          <option value="manager" ${u.role === "manager" ? "selected" : ""}>manager</option>
+          <option value="superadmin" ${u.role === "superadmin" ? "selected" : ""}>superadmin</option>
+        </select>
+        ${isMe ? '' : `<button class="btn ghost" onclick="deleteUser(${u.id})">წაშლა</button>`}
+      </div>
+    </div>
+  `;
+}
+
+async function createUser() {
+  const username = document.getElementById("newUserName").value.trim();
+  const password = document.getElementById("newUserPass").value;
+  const role = document.getElementById("newUserRole").value;
+  if (!username || !password) { showToast("შეავსეთ ველები"); return; }
+  try {
+    await api("/api/admin/users", { method: "POST", body: JSON.stringify({ username, password, role }) });
+    document.getElementById("newUserName").value = "";
+    document.getElementById("newUserPass").value = "";
+    showToast("მომხმარებელი დაემატა");
+    loadUsers();
   } catch (e) {
     showToast(e.message);
   }
 }
 
-async function removeMember(memberId) {
-  await api(`/api/admin/groups/${activeGroupId}/members/${memberId}`, { method: "DELETE" });
-  showToast("წევრი წაშლილია");
-  loadMembers();
-  loadGroups();
+async function changeUserRole(id, role) {
+  try {
+    await api(`/api/admin/users/${id}`, { method: "PUT", body: JSON.stringify({ role }) });
+    showToast("როლი განახლდა");
+  } catch (e) {
+    showToast(e.message);
+  }
+  loadUsers();
+}
+
+async function deleteUser(id) {
+  if (!confirm("წავშალო ეს მომხმარებელი?")) return;
+  try {
+    await api(`/api/admin/users/${id}`, { method: "DELETE" });
+    showToast("წაშლილია");
+  } catch (e) {
+    showToast(e.message);
+  }
+  loadUsers();
+}
+
+// ---------- AUDIT ----------
+
+async function loadAudit(reset) {
+  const box = document.getElementById("auditList");
+  const loadMoreBtn = document.getElementById("loadMoreBtn");
+  try {
+    const path = oldestAuditId
+      ? `/api/admin/audit?limit=50&before_id=${oldestAuditId}`
+      : `/api/admin/audit?limit=50`;
+    const events = await api(path);
+    const html = events.map(auditRowHtml).join("");
+    box.innerHTML = reset ? (events.length ? html : '<div class="empty">ჩანაწერი არ არის</div>') : box.innerHTML + html;
+    if (events.length) oldestAuditId = events[events.length - 1].id;
+    loadMoreBtn.style.display = events.length === 50 ? "inline-block" : "none";
+  } catch (e) {
+    box.innerHTML = `<div class="empty">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function loadMoreAudit() { loadAudit(false); }
+
+function auditRowHtml(ev) {
+  const when = ev.occurred_at ? new Date(ev.occurred_at).toLocaleString("ka-GE") : "";
+
+  let identityLine;
+  if (ev.actor_type === "patient") {
+    const bits = [];
+    if (ev.patient_full_name) bits.push(escapeHtml(ev.patient_full_name));
+    if (ev.patient_personal_id) bits.push(`პ/ნ ${escapeHtml(ev.patient_personal_id)}`);
+    identityLine = bits.length ? bits.join(" — ") : escapeHtml(ev.actor_label);
+  } else {
+    identityLine = `${escapeHtml(ev.actor_type)}: ${escapeHtml(ev.actor_label)}`;
+  }
+
+  return `
+    <div class="audit-row">
+      <div>
+        <strong>${escapeHtml(ev.action)}</strong>
+        <span class="audit-meta"> — ${identityLine}</span>
+        ${ev.details ? `<div class="audit-meta">${escapeHtml(ev.details)}</div>` : ''}
+      </div>
+      <div class="audit-meta">${when}<br>${escapeHtml(ev.ip_address || "")}</div>
+    </div>
+  `;
 }
 
 function escapeHtml(str) {

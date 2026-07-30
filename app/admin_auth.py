@@ -38,23 +38,25 @@ def verify_admin(username: str, password: str):
     con = psycopg2.connect(PG_DSN)
     try:
         cur = con.cursor()
-        cur.execute("SELECT id, password_hash FROM admin_users WHERE username = %s", (username.strip(),))
+        cur.execute(
+            "SELECT id, password_hash, role FROM admin_users WHERE username = %s", (username.strip(),)
+        )
         row = cur.fetchone()
         if not row:
             return None
-        admin_id, password_hash = row
+        admin_id, password_hash, role = row
         if not verify_password(password, password_hash):
             return None
-        return {"id": admin_id, "username": username.strip()}
+        return {"id": admin_id, "username": username.strip(), "role": role}
     finally:
         con.close()
 
 
-def create_admin_token(admin_id: int, username: str) -> str:
+def create_admin_token(admin_id: int, username: str, role: str) -> str:
     payload = {
         "sub": str(admin_id),
         "username": username,
-        "role": "admin",
+        "role": role,
         "iat": int(time.time()),
         "exp": int(time.time()) + ADMIN_JWT_EXPIRY_SECONDS,
     }
@@ -63,6 +65,77 @@ def create_admin_token(admin_id: int, username: str) -> str:
 
 def verify_admin_token(token: str) -> dict:
     payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-    if payload.get("role") != "admin":
+    if payload.get("role") not in ("superadmin", "manager", "viewer"):
         raise jwt.InvalidTokenError("ეს არ არის ადმინის token")
-    return {"id": payload["sub"], "username": payload.get("username")}
+    return {"id": payload["sub"], "username": payload.get("username"), "role": payload["role"]}
+
+
+def list_admin_users() -> list:
+    con = psycopg2.connect(PG_DSN)
+    try:
+        cur = con.cursor()
+        cur.execute("SELECT id, username, role, created_at FROM admin_users ORDER BY username")
+        return [
+            {"id": i, "username": u, "role": r, "created_at": c.isoformat() if c else None}
+            for i, u, r, c in cur.fetchall()
+        ]
+    finally:
+        con.close()
+
+
+def create_admin_user(username: str, password: str, role: str) -> int:
+    con = psycopg2.connect(PG_DSN)
+    try:
+        cur = con.cursor()
+        cur.execute(
+            "INSERT INTO admin_users (username, password_hash, role) VALUES (%s, %s, %s) RETURNING id",
+            (username.strip(), hash_password(password), role),
+        )
+        new_id = cur.fetchone()[0]
+        con.commit()
+        return new_id
+    finally:
+        con.close()
+
+
+def update_admin_user(admin_id: int, role: str = None, password: str = None) -> bool:
+    con = psycopg2.connect(PG_DSN)
+    try:
+        cur = con.cursor()
+        if role is not None:
+            cur.execute("UPDATE admin_users SET role = %s WHERE id = %s", (role, admin_id))
+        if password:
+            cur.execute(
+                "UPDATE admin_users SET password_hash = %s WHERE id = %s",
+                (hash_password(password), admin_id),
+            )
+        con.commit()
+        return cur.rowcount > 0
+    finally:
+        con.close()
+
+
+def delete_admin_user(admin_id: int) -> bool:
+    con = psycopg2.connect(PG_DSN)
+    try:
+        cur = con.cursor()
+        cur.execute("SELECT COUNT(*) FROM admin_users WHERE role = 'superadmin'")
+        superadmin_count = cur.fetchone()[0]
+        cur.execute("SELECT role FROM admin_users WHERE id = %s", (admin_id,))
+        row = cur.fetchone()
+        if not row:
+            return False
+        if row[0] == "superadmin" and superadmin_count <= 1:
+            raise ValueError("ბოლო superadmin-ის წაშლა არ შეიძლება")
+        cur.execute("DELETE FROM admin_users WHERE id = %s", (admin_id,))
+        con.commit()
+        return cur.rowcount > 0
+    finally:
+        con.close()
+
+
+_ROLE_RANK = {"viewer": 0, "manager": 1, "superadmin": 2}
+
+
+def role_at_least(role: str, minimum: str) -> bool:
+    return _ROLE_RANK.get(role, -1) >= _ROLE_RANK.get(minimum, 99)

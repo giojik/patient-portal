@@ -18,11 +18,15 @@ from app.pdf_report import generate_panel_pdf
 from app.html_pdf_report import generate_radiology_pdf
 from app.session import create_token, verify_token
 from app.otp_auth import request_code, verify_code
-from app.onec_client import get_patient_results, get_panel_by_id, get_patient_name
+from app.onec_client import get_patient_results, get_panel_by_id, get_patient_name, get_personal_id_by_kartoteka
+from app import feature_flags as ff
+from app import audit
+from app.admin import router as admin_router
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Lab Patient Portal API")
 app.state.limiter = limiter
+app.include_router(admin_router)
 
 
 @app.exception_handler(RateLimitExceeded)
@@ -71,6 +75,7 @@ async def login(request: Request, body: LoginRequest):
     """
     patient = verify_patient(body.login, body.password)
     if not patient:
+        audit.log_event("patient", f"terra_login_attempt:{body.login}", request.client.host if request.client else "", "login_failed")
         raise HTTPException(status_code=401, detail="არასწორი მონაცემები")
 
     portal_patient = get_patient_by_login(body.login)
@@ -81,6 +86,10 @@ async def login(request: Request, body: LoginRequest):
         )
 
     token = create_token(portal_patient["id"], source="terra")
+    audit.log_event(
+        "patient", f"terra:{portal_patient['id']}", request.client.host if request.client else "",
+        "login", full_name=portal_patient["full_name"],
+    )
     return {
         "token": token,
         "full_name": portal_patient["full_name"],
@@ -113,6 +122,10 @@ async def auth_verify_code(request: Request, body: VerifyCodeBody):
         raise HTTPException(status_code=401, detail="არასწორი ან ვადაგასული კოდი")
 
     token = create_token(result["onec_ref"], source="onec")
+    audit.log_event(
+        "patient", f"onec:{result['onec_ref']}", request.client.host if request.client else "",
+        "login", personal_id=body.personal_id, full_name=result["full_name"],
+    )
     return {
         "token": token,
         "full_name": result["full_name"],
@@ -130,8 +143,21 @@ async def results(request: Request, authorization: str = Header(None)):
     """
     session = get_current_session(authorization)
     if session["src"] == "onec":
-        return get_patient_results(session["sub"])
-    return get_results_for_patient(int(session["sub"]))
+        all_results = get_patient_results(session["sub"])
+        patient_name = get_patient_name(session["sub"])
+        personal_id = get_personal_id_by_kartoteka(session["sub"])
+    else:
+        all_results = get_results_for_patient(int(session["sub"]))
+        patient_name = get_patient_full_name(int(session["sub"]))
+        personal_id = None
+
+    flags = ff.get_effective_flags(session["src"], session["sub"])
+    filtered = [r for r in all_results if flags.get(r.get("category"), True)]
+    audit.log_event(
+        "patient", f"{session['src']}:{session['sub']}", request.client.host if request.client else "",
+        "view_results", f"{len(filtered)} ჩანაწერი", personal_id=personal_id, full_name=patient_name,
+    )
+    return filtered
 
 
 @app.get("/api/report/{panel_group_id}")
@@ -141,12 +167,17 @@ async def download_report(request: Request, panel_group_id: str, authorization: 
     ერთი პანელის PDF report. მუშაობს ორივე წყაროსთვის (Terra/1C).
     """
     session = get_current_session(authorization)
+    flags = ff.get_effective_flags(session["src"], session["sub"])
+    personal_id = None
 
     if session["src"] == "onec":
         panel_data = get_panel_by_id(panel_group_id, session["sub"])
         if not panel_data:
             raise HTTPException(status_code=404, detail="ეს კვლევა ვერ მოიძებნა")
+        if not flags.get(panel_data.get("category"), True):
+            raise HTTPException(status_code=403, detail="ეს ფუნქცია ამჟამად გამორთულია")
         patient_name = get_patient_name(session["sub"])
+        personal_id = get_personal_id_by_kartoteka(session["sub"])
         if panel_data.get("is_narrative"):
             pdf_bytes = generate_radiology_pdf(patient_name, panel_data)
         else:
@@ -156,10 +187,16 @@ async def download_report(request: Request, panel_group_id: str, authorization: 
         panel_data = get_panel_results(patient_id, panel_group_id)
         if not panel_data:
             raise HTTPException(status_code=404, detail="ეს კვლევა ვერ მოიძებნა")
+        if not flags.get("lab", True):
+            raise HTTPException(status_code=403, detail="ეს ფუნქცია ამჟამად გამორთულია")
         patient_name = get_patient_full_name(patient_id)
         pdf_bytes = generate_panel_pdf(patient_name, panel_data)
 
     filename = f"report_{panel_group_id[:8]}.pdf"
+    audit.log_event(
+        "patient", f"{session['src']}:{session['sub']}", request.client.host if request.client else "",
+        "download_report", panel_group_id, personal_id=personal_id, full_name=patient_name,
+    )
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
@@ -178,3 +215,4 @@ async def root():
 
 
 app.mount("/portal", StaticFiles(directory="app/static", html=True), name="portal")
+app.mount("/admin", StaticFiles(directory="app/static_admin", html=True), name="admin")

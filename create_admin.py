@@ -17,11 +17,16 @@ PG_DSN = os.environ["PORTAL_DB_DSN"]
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("გამოყენება: python3 create_admin.py <username>")
+    if len(sys.argv) not in (2, 3):
+        print("გამოყენება: python3 create_admin.py <username> [role: superadmin|manager|viewer]")
         sys.exit(1)
 
     username = sys.argv[1].strip()
+    role = sys.argv[2].strip() if len(sys.argv) == 3 else "superadmin"
+    if role not in ("superadmin", "manager", "viewer"):
+        print("role უნდა იყოს: superadmin, manager ან viewer")
+        sys.exit(1)
+
     password = getpass.getpass("პაროლი: ")
     password_confirm = getpass.getpass("გაიმეორეთ პაროლი: ")
     if password != password_confirm:
@@ -38,13 +43,13 @@ def main():
         cur = con.cursor()
         cur.execute(
             """
-            INSERT INTO admin_users (username, password_hash) VALUES (%s, %s)
-            ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash
+            INSERT INTO admin_users (username, password_hash, role) VALUES (%s, %s, %s)
+            ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role
             """,
-            (username, password_hash),
+            (username, password_hash, role),
         )
         con.commit()
-        print(f"ადმინის მომხმარებელი '{username}' მზადაა.")
+        print(f"ადმინის მომხმარებელი '{username}' ({role}) მზადაა.")
     finally:
         con.close()
 
