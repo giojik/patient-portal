@@ -8,8 +8,10 @@
   :root {
     --primary: #0E2340;
     --primary-light: #16305a;
-    --accent: #FF6B00;
-    --accent-dark: #e05f00;
+    --accent: #A8D62B;
+    --accent-dark: #8CB824;
+    --accent-text: #5C7A00;
+    --accent-purple: #7C3AED;
     --bg: #F8F9FA;
     --card-bg: #ffffff;
     --text: #1f2b3a;
@@ -159,7 +161,7 @@
     border-bottom: 1px solid rgba(255,255,255,0.12);
   }
   .sidebar-logo .logo-mark {
-    width: 36px; height: 36px; background: var(--accent);
+    width: 36px; height: 36px; background: var(--accent); color: var(--primary);
     border-radius: 9px; display: flex; align-items: center; justify-content: center;
     font-weight: 800; font-size: 1rem; flex-shrink: 0;
   }
@@ -171,10 +173,11 @@
     padding: 12px 12px; border-radius: 9px; margin-bottom: 4px;
     color: rgba(255,255,255,0.75); cursor: pointer; font-size: 0.92rem; font-weight: 500;
     transition: background 0.15s, color 0.15s;
+    border-left: 3px solid transparent;
   }
   .nav-item .nav-icon { font-size: 1.05rem; width: 20px; text-align: center; }
   .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
-  .nav-item.active { background: rgba(255,255,255,0.14); color: #fff; font-weight: 700; }
+  .nav-item.active { background: rgba(168,214,43,0.14); color: #fff; font-weight: 700; border-left-color: var(--accent); }
   .nav-item.disabled { opacity: 0.4; cursor: not-allowed; }
   .nav-item.disabled:hover { background: none; color: rgba(255,255,255,0.75); }
 
@@ -251,6 +254,12 @@
   .notif-banner strong { display: block; color: var(--warn-text); font-size: 0.92rem; margin-bottom: 2px; }
   .notif-banner span { color: var(--text); font-size: 0.88rem; }
 
+  .notif-banner.info { background: #f2ebfd; border-color: #ddc6fa; }
+  .notif-banner.info strong { color: var(--accent-purple); }
+
+  .notif-banner.pending { background: #fff8e6; border-color: #f5dfa0; }
+  .notif-banner.pending strong { color: #8a6d00; }
+
   .section-title {
     font-size: 1.02rem; font-weight: 700; color: var(--text); margin: 0 0 14px;
   }
@@ -263,16 +272,30 @@
     margin-bottom: 20px;
   }
 
+  .profile-card { padding: 8px 24px; }
+  .profile-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .profile-row:last-child { border-bottom: none; }
+  .profile-row .label { color: var(--muted); font-weight: 600; font-size: 0.9rem; }
+  .profile-row .value { font-weight: 600; }
+  .profile-note { color: var(--muted); font-size: 0.82rem; margin-top: 4px; }
+
   table.results-table { width: 100%; border-collapse: collapse; }
   table.results-table th {
     text-align: left; padding: 13px 20px; font-size: 0.72rem; font-weight: 700;
-    color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em;
-    background: #fafbfc; border-bottom: 1px solid var(--border);
+    color: #fff; text-transform: uppercase; letter-spacing: 0.03em;
+    background: var(--primary); border-bottom: 1px solid var(--border);
   }
   table.results-table td {
     padding: 14px 20px; font-size: 0.9rem; border-bottom: 1px solid var(--border); vertical-align: middle;
   }
   table.results-table tr:last-child td { border-bottom: none; }
+  table.results-table td.mobile-label { display: none; }
 
   .status-badge {
     display: inline-block; padding: 4px 12px; border-radius: 20px;
@@ -285,15 +308,15 @@
   .pdf-action {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;
-    background: #fff; color: var(--accent); border: 1.4px solid var(--accent);
+    background: #fff; color: var(--accent-text); border: 1.4px solid var(--accent);
     cursor: pointer; white-space: nowrap;
   }
-  .pdf-action:hover { background: var(--accent); color: #fff; }
+  .pdf-action:hover { background: var(--accent); color: var(--primary); }
   .pdf-action:disabled { opacity: 0.5; cursor: wait; }
 
   .cta-btn {
     width: auto; margin: 0; padding: 11px 22px;
-    background: var(--accent); color: #fff; border: none; border-radius: 9px;
+    background: var(--accent); color: var(--primary); border: none; border-radius: 9px;
     font-size: 0.9rem; font-weight: 700; cursor: pointer;
   }
   .cta-btn:hover { background: var(--accent-dark); }
@@ -515,6 +538,9 @@
         <li class="nav-item" data-page="history" onclick="setActivePage('history')">
           <span class="nav-icon">🕒</span> ისტორია
         </li>
+        <li class="nav-item" data-page="profile" onclick="setActivePage('profile')">
+          <span class="nav-icon">👤</span> ჩემი პროფილი
+        </li>
         <li class="nav-item disabled">
           <span class="nav-icon">⚙️</span> პარამეტრები
         </li>
@@ -549,6 +575,20 @@
           </div>
 
           <div id="dashboardNotif"></div>
+          <div id="dashboardPrescriptionNotif"></div>
+          <div id="dashboardPendingNotif"></div>
+
+          <div id="pendingTestsSection" style="display:none;">
+            <div class="section-title">დანიშნული, ჯერ არშესრულებელი კვლევები</div>
+            <div class="data-card">
+              <table class="results-table" id="pendingTestsTable">
+                <thead>
+                  <tr><th>თარიღი</th><th>კვლევის დასახელება</th><th>სტატუსი</th></tr>
+                </thead>
+                <tbody id="pendingTestsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
 
           <div class="section-title">ბოლო კვლევების სტატუსი</div>
           <div class="data-card">
@@ -609,6 +649,38 @@
             <span><i class="dot-lg dot-abnormal"></i>ნორმიდან გადახრილი</span>
           </div>
           <div id="historyContent"></div>
+        </div>
+
+        <!-- PROFILE (read-only) -->
+        <div class="page" id="page-profile">
+          <div class="section-title">ჩემი პროფილი</div>
+          <div class="data-card profile-card">
+            <div class="profile-row">
+              <span class="label">სახელი, გვარი</span>
+              <span class="value" id="profFullName">—</span>
+            </div>
+            <div class="profile-row" id="profPersonalIdRow" style="display:none;">
+              <span class="label">პირადი ნომერი</span>
+              <span class="value" id="profPersonalId">—</span>
+            </div>
+            <div class="profile-row" id="profPhoneRow" style="display:none;">
+              <span class="label">ტელეფონი</span>
+              <span class="value" id="profPhone">—</span>
+            </div>
+            <div class="profile-row" id="profEmailRow" style="display:none;">
+              <span class="label">ელფოსტა</span>
+              <span class="value" id="profEmail">—</span>
+            </div>
+            <div class="profile-row" id="profAddressRow" style="display:none;">
+              <span class="label">მისამართი</span>
+              <span class="value" id="profAddress">—</span>
+            </div>
+            <div class="profile-row" id="profLoginRow" style="display:none;">
+              <span class="label">მომხმარებელი</span>
+              <span class="value" id="profLogin">—</span>
+            </div>
+          </div>
+          <p class="profile-note">ეს გვერდი მხოლოდ სანახავია — მონაცემების ცვლილება პორტალის მეშვეობით შეუძლებელია.</p>
         </div>
 
       </div>
@@ -862,6 +934,42 @@ function setActivePage(pageKey) {
     el.classList.toggle("active", el.id === `page-${pageKey}`);
   });
   toggleSidebar(false);
+  if (pageKey === "profile") loadProfile();
+}
+
+/* ---------- PROFILE (read-only) ---------- */
+async function loadProfile() {
+  const token = sessionStorage.getItem("portal_token");
+  try {
+    const resp = await fetch(`${API_BASE}/api/patient/profile`, {
+      headers: { "Authorization": `Bearer ${token}` },
+    });
+    if (resp.status === 401) { doLogout(); return; }
+    const data = await resp.json();
+    document.getElementById("profFullName").textContent = data.full_name || "—";
+    if (data.personal_id) {
+      document.getElementById("profPersonalIdRow").style.display = "flex";
+      document.getElementById("profPersonalId").textContent = data.personal_id;
+    }
+    if (data.phone) {
+      document.getElementById("profPhoneRow").style.display = "flex";
+      document.getElementById("profPhone").textContent = data.phone;
+    }
+    if (data.email) {
+      document.getElementById("profEmailRow").style.display = "flex";
+      document.getElementById("profEmail").textContent = data.email;
+    }
+    if (data.address) {
+      document.getElementById("profAddressRow").style.display = "flex";
+      document.getElementById("profAddress").textContent = data.address;
+    }
+    if (data.login_masked) {
+      document.getElementById("profLoginRow").style.display = "flex";
+      document.getElementById("profLogin").textContent = data.login_masked;
+    }
+  } catch (err) {
+    document.getElementById("profFullName").textContent = "ჩატვირთვა ვერ მოხერხდა";
+  }
 }
 
 function toggleSidebar(open) {
@@ -901,6 +1009,52 @@ async function loadResults() {
     renderHistoryPage(allResults);
   } catch (err) {
     document.getElementById("labContent").innerHTML = '<div class="empty-state">შედეგების ჩატვირთვა ვერ მოხერხდა. სცადეთ გვერდის განახლება.</div>';
+  }
+  loadPendingTests();
+}
+
+/* "დანიშნული, ჯერ არშესრულებული" კვლევები/ანალიზები — ცალკე, მესამე,
+   ყვითელი ბანერი დეშბორდზე. */
+async function loadPendingTests() {
+  const token = sessionStorage.getItem("portal_token");
+  const pendingEl = document.getElementById("dashboardPendingNotif");
+  const sectionEl = document.getElementById("pendingTestsSection");
+  const tbody = document.getElementById("pendingTestsTableBody");
+  try {
+    const resp = await fetch(`${API_BASE}/api/patient/pending-tests`, { headers: { "Authorization": `Bearer ${token}` } });
+    if (!resp.ok) { pendingEl.innerHTML = ""; sectionEl.style.display = "none"; return; }
+    const pending = await resp.json();
+    if (!pending.length) {
+      pendingEl.innerHTML = "";
+      sectionEl.style.display = "none";
+      return;
+    }
+    const names = pending.slice(0, 3).map(p => escapeHtml(p.test_name)).join(", ");
+    const more = pending.length > 3 ? ` და კიდევ ${pending.length - 3}` : "";
+    pendingEl.innerHTML = `
+      <div class="notif-banner pending">
+        <span class="pin">⏳</span>
+        <div>
+          <strong>დანიშნულია, პასუხი ჯერ არ არის მზად</strong>
+          <span>${names}${more} — შედეგი გამოჩნდება, როგორც კი მზად იქნება.</span>
+        </div>
+      </div>
+    `;
+
+    sectionEl.style.display = "block";
+    tbody.innerHTML = pending.map(p => `
+      <tr>
+        <td class="mobile-label">თარიღი</td>
+        <td>${formatDate(p.order_date)}</td>
+        <td class="mobile-label">კვლევის დასახელება</td>
+        <td>${escapeHtml(p.test_name)}</td>
+        <td class="mobile-label">სტატუსი</td>
+        <td><span class="status-badge warn">ველოდებით</span></td>
+      </tr>
+    `).join("");
+  } catch (err) {
+    pendingEl.innerHTML = "";
+    sectionEl.style.display = "none";
   }
 }
 
@@ -953,6 +1107,27 @@ function renderDashboard(results) {
 
   const recent = panels.slice(0, 5);
   const tbody = document.getElementById("recentTableBody");
+
+  // "დანიშნული კვლევა/ანალიზი" — ცალკე გამოყოფილი ბანერი, ბოლო
+  // შედეგისგან განსხვავებულ ფერში, რომ ცხადი იყოს განსხვავება
+  // "დანიშნულია" და "შედეგი მზადაა" შორის.
+  const prescriptionEl = document.getElementById("dashboardPrescriptionNotif");
+  const prescriptionPanels = groupIntoPanels(results.filter(r => r.category === "prescription"));
+  if (prescriptionPanels.length > 0) {
+    const latestRx = prescriptionPanels[0];
+    prescriptionEl.innerHTML = `
+      <div class="notif-banner info">
+        <span class="pin">💊</span>
+        <div>
+          <strong>დანიშნული კვლევა/ანალიზი</strong>
+          <span>გაქვთ დანიშნული „${escapeHtml(latestRx.name)}" — იხილეთ დეტალები „დანიშნულებები" გვერდზე.</span>
+        </div>
+      </div>
+    `;
+  } else {
+    prescriptionEl.innerHTML = "";
+  }
+
   if (!recent.length) {
     tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state">შედეგები ჯერ არ არის ხელმისაწვდომი</div></td></tr>`;
     return;

@@ -21,24 +21,26 @@ services:
       - portal-db
     restart: unless-stopped
 
-  sync-worker:
-    build: .
-    command: ["python3", "sync_worker.py"]
-    env_file: .env
-    depends_on:
-      - portal-db
+  # sync-worker: Terra-ს სინქრონიზაცია გაჩერებულია (2026-07-30) — იგივე
+  # მონაცემები 1C-დან მოდის. აღდგენისთვის უბრალოდ მოხსენით კომენტარი.
+  # sync-worker:
+  #   build: .
+  #   command: ["python3", "sync_worker.py"]
+  #   env_file: .env
+  #   depends_on:
+  #     - portal-db
 
-  scheduler:
-    image: mcuadros/ofelia:latest
-    depends_on:
-      - sync-worker
-    command: daemon --docker
-    labels:
-      ofelia.job-run.sync.schedule: "@every 5m"
-      ofelia.job-run.sync.container: "labportal-sync-worker-1"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped
+  # scheduler:
+  #   image: mcuadros/ofelia:latest
+  #   depends_on:
+  #     - sync-worker
+  #   command: daemon --docker
+  #   labels:
+  #     ofelia.job-run.sync.schedule: "@every 5m"
+  #     ofelia.job-run.sync.container: "labportal-sync-worker-1"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   restart: unless-stopped
 
 secrets:
   pg_password:

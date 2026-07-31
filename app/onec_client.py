@@ -25,7 +25,7 @@ import base64
 import html
 import xml.etree.ElementTree as ET
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import quote
 
 ONEC_BASE = os.environ["ONEC_BASE_URL"].rstrip("/")
@@ -131,6 +131,7 @@ _indicator_name_cache = {}
 _unit_name_cache = {}
 _nomenclature_name_cache = {}
 _template_name_cache = {}
+_address_type_cache = {}
 
 _EMPTY_GUID = "00000000-0000-0000-0000-000000000000"
 
@@ -161,6 +162,10 @@ def _get_nomenclature_name(key: str) -> str:
 
 def _get_template_name(key: str) -> str:
     return _cached_lookup(_template_name_cache, "Catalog_ШаблоныМедицинскихДокументов", key)
+
+
+def _get_address_type_name(key: str) -> str:
+    return _cached_lookup(_address_type_cache, "Catalog_ВидыАдресовПациентов", key)
 
 
 def _to_float(value):
@@ -446,6 +451,157 @@ def get_patient_results(kartoteka_ref: str) -> list:
     for doc in documents:
         results.extend(_document_to_results(doc))
     return results
+
+
+def get_pending_tests(kartoteka_ref: str) -> list:
+    """
+    "დანიშნული, ჯერ არშესრულებული" კვლევები/ანალიზები.
+
+    ⚠️ პირველი ვერსია ეყრდნობოდა Document_МедицинскийДокумент.
+    НазначенныеУслуги-ს УникальныйИдентификаторУслуги-ით დამთხვევას —
+    რეალურ მონაცემზე ტესტმა დაადასტურა, რომ ეს ველი პრაქტიკულად
+    ცარიელია უმეტეს დოკუმენტში (50-დან მხოლოდ 1-ს ჰქონდა), ამიტომ
+    უკვე დასრულებული ტესტებიც მცდარად ჩნდებოდა pending-ად.
+
+    გასწორებული ლოგიკა: ვამოწმებთ ტესტის ტიპის (Номенклатура_Key)
+    დამთხვევას — ЗАКАЗ-ის (Document_ЗаказПациента.МедицинскиеУслуги)
+    ერთეული ითვლება შესრულებულად, თუ არსებობს დასრულებული დოკუმენტი
+    (Document_МедицинскийДокумент.ВыполненныеУслуги) იმავე Номенклатура_Key-ით,
+    შეკვეთის თარიღის შემდეგ დათარიღებული.
+
+    მხოლოდ ბოლო 30 დღეში დანიშნული კვლევები ბრუნდება — ძველი,
+    სავარაუდოდ მიტოვებული შეკვეთები აღარ ჩანს.
+
+    ⚠️ ცნობილი ლიმიტაცია (2026-07-30): ჰისტომორფოლოგიის/პათოლოგიის
+    ტიპის კვლევები (Номенклатура "ჰისტომორფოლოგიური გამოკვლევა" და
+    მისთანები) ამ ფუნქციაში ყოველთვის pending-ად გამოჩნდება, თუნდაც
+    რეალურად შესრულებული იყოს — რადგან ეს შედეგები საერთოდ არ ჩანს
+    get_patient_results()/Document_МедицинскийДокумент-ში (0 დამთხვევა
+    448 ჩანაწერიდან რეალურ ტესტზე). სავარაუდოდ პათოლოგია ცალკე
+    დოკუმენტის ტიპში ინახება 1C-ში, რომელიც ჯერ არ არის აღმოჩენილი —
+    ეს ცალკე, უფრო დიდი discovery-ის თემაა (მთელი შედეგების
+    pipeline-ის ხარვეზი, არა მხოლოდ ამ ფუნქციისა), განზრახ
+    გადადებულია მომავალი სესიისთვის.
+    """
+    ordered_data = _get(
+        "Document_ЗаказПациента",
+        params={
+            "$filter": f"Пациент_Key eq guid'{kartoteka_ref}'",
+            "$format": "json",
+        },
+    )
+
+    completed_data = _get(
+        "Document_МедицинскийДокумент",
+        params={
+            "$filter": f"Пациент_Key eq guid'{kartoteka_ref}'",
+            "$format": "json",
+        },
+    )
+    completed_dates_by_nomenclature = {}
+    for doc in completed_data.get("value", []):
+        doc_date = doc.get("Date")
+        for svc in doc.get("ВыполненныеУслуги", []):
+            key = svc.get("Номенклатура_Key")
+            if key:
+                completed_dates_by_nomenclature.setdefault(key, []).append(doc_date)
+
+    cutoff = (datetime.utcnow() - timedelta(days=30)).isoformat()
+
+    pending = []
+    for order in ordered_data.get("value", []):
+        order_date = order.get("Date")
+        if not order_date or order_date < cutoff:
+            continue
+        for svc in order.get("МедицинскиеУслуги", []):
+            nomen_key = svc.get("Номенклатура_Key")
+            completed_dates = completed_dates_by_nomenclature.get(nomen_key, [])
+            fulfilled = any(d and order_date and d >= order_date for d in completed_dates)
+            if fulfilled:
+                continue
+            pending.append({
+                "test_name": _get_nomenclature_name(nomen_key) or "კვლევა",
+                "planned_time": svc.get("ЗапланированноеВремя"),
+                "order_date": order_date,
+            })
+
+    pending.sort(key=lambda p: p.get("order_date") or "", reverse=True)
+    return pending
+
+
+def get_onec_profile(kartoteka_ref: str):
+    """
+    Read-only პროფილის მონაცემები 1C წყაროსთვის: სახელი, პირადი ნომერი,
+    ტელეფონი, ელფოსტა, მისამართი.
+
+    მისამართი: InformationRegister_АдресПациента_RecordType (დადასტურებული
+    ველები: ВидАдреса_Key, Представление, Active). ერთ პაციენტს შეიძლება
+    ჰქონდეს რამდენიმე ტიპის მისამართი (ფაქტობრივი/იურიდიული/დროებითი
+    რეგისტრაცია) — ვირჩევთ ფაქტობრივს, თუ არა — იურიდიულს, თუ არც
+    ერთი — პირველ არააქტიურ-არშემცველს.
+
+    InformationRegister_КонтактнаяИнформацияПациента_RecordType-იც
+    პერიოდული რეესტრია — ერთი ტიპის რამდენიმე ისტორიული ჩანაწერი
+    შეიძლება არსებობდეს, ამიტომ თითო ტიპზე ბოლო მნიშვნელობას ვინახავთ.
+    """
+    card = _get(f"Catalog_Картотека(guid'{kartoteka_ref}')", params={"$format": "json"})
+
+    phone = None
+    email = None
+    try:
+        contact_data = _get(
+            "InformationRegister_КонтактнаяИнформацияПациента_RecordType",
+            params={
+                "$filter": f"Пациент_Key eq guid'{kartoteka_ref}'",
+                "$format": "json",
+            },
+        )
+        for row in contact_data.get("value", []):
+            raw_type = (row.get("Тип") or "").strip().lower()
+            value = row.get("Представление")
+            if not value:
+                continue
+            if "телефон" in raw_type:
+                phone = value
+            elif "почт" in raw_type or "e-mail" in raw_type or "email" in raw_type:
+                email = value
+    except requests.exceptions.RequestException:
+        pass
+
+    address = None
+    try:
+        address_data = _get(
+            "InformationRegister_АдресПациента_RecordType",
+            params={
+                "$filter": f"Пациент_Key eq guid'{kartoteka_ref}'",
+                "$format": "json",
+            },
+        )
+        address_by_type = {}
+        for row in address_data.get("value", []):
+            if row.get("Active") is False:
+                continue
+            value = row.get("Представление")
+            if not value:
+                continue
+            type_name = _get_address_type_name(row.get("ВидАдреса_Key"))
+            address_by_type[type_name] = value
+        address = (
+            address_by_type.get("ფაქტობრივი მისამართი")
+            or address_by_type.get("იურიდიული მისამართი")
+            or next(iter(address_by_type.values()), None)
+        )
+    except requests.exceptions.RequestException:
+        pass
+
+    return {
+        "full_name": (card.get("Description") or "").strip(),
+        "personal_id": get_personal_id_by_kartoteka(kartoteka_ref) or None,
+        "phone": phone,
+        "email": email,
+        "address": address,
+        "source": "onec",
+    }
 
 
 def get_patient_name(kartoteka_ref: str) -> str:

@@ -18,15 +18,17 @@ from app.pdf_report import generate_panel_pdf
 from app.html_pdf_report import generate_radiology_pdf
 from app.session import create_token, verify_token
 from app.otp_auth import request_code, verify_code
-from app.onec_client import get_patient_results, get_panel_by_id, get_patient_name, get_personal_id_by_kartoteka
+from app.onec_client import get_patient_results, get_panel_by_id, get_patient_name, get_personal_id_by_kartoteka, get_pending_tests
 from app import feature_flags as ff
 from app import audit
 from app.admin import router as admin_router
+from app import profile as profile_router
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Lab Patient Portal API")
 app.state.limiter = limiter
 app.include_router(admin_router)
+app.include_router(profile_router.router)
 
 
 @app.exception_handler(RateLimitExceeded)
@@ -158,6 +160,21 @@ async def results(request: Request, authorization: str = Header(None)):
         "view_results", f"{len(filtered)} ჩანაწერი", personal_id=personal_id, full_name=patient_name,
     )
     return filtered
+
+
+@app.get("/api/patient/pending-tests")
+@limiter.limit("20/minute")
+async def pending_tests(request: Request, authorization: str = Header(None)):
+    """
+    "დანიშნული, ჯერ არშესრულებული" კვლევები/ანალიზები.
+    ამჟამად მხოლოდ 1C წყაროსთვის — Terra-ს მხარეს შესაბამისი
+    "შეკვეთა vs შესრულებული" მონაცემი არასდროს სინქრონიზებულა
+    (და Terra-ს sync ისედაც გაჩერებულია).
+    """
+    session = get_current_session(authorization)
+    if session["src"] != "onec":
+        return []
+    return get_pending_tests(session["sub"])
 
 
 @app.get("/api/report/{panel_group_id}")

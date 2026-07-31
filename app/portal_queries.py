@@ -57,6 +57,41 @@ def _compute_status(result_value: str, low_enc, high_enc, is_out_of_norm) -> str
     return "normal"
 
 
+def _mask_login(login: str) -> str:
+    """ბოლო 3 სიმბოლოს გარდა ყველაფერს ფარავს (მაგ. "*******123")."""
+    if not login:
+        return ""
+    if len(login) <= 3:
+        return "*" * len(login)
+    return "*" * (len(login) - 3) + login[-3:]
+
+
+def get_terra_profile(patient_id: int):
+    """
+    Read-only პროფილის მონაცემები Terra წყაროსთვის.
+    'patients' ცხრილში ამჟამად მხოლოდ სახელი და login ინახება —
+    პირადი ნომერი/დაბადების თარიღი/მისამართი ჯერ არ არის სინქრონიზებული.
+    """
+    con = psycopg2.connect(PG_DSN)
+    try:
+        cur = con.cursor()
+        cur.execute(
+            "SELECT full_name_enc, login_enc FROM patients WHERE id = %s",
+            (patient_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        full_name_enc, login_enc = row
+        return {
+            "full_name": decrypt_field(full_name_enc),
+            "login_masked": _mask_login(decrypt_field(login_enc)),
+            "source": "terra",
+        }
+    finally:
+        con.close()
+
+
 def get_patient_full_name(patient_id: int) -> str:
     con = psycopg2.connect(PG_DSN)
     try:
