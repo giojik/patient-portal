@@ -995,22 +995,65 @@ function filterByQuery(results, q) {
 }
 
 /* ---------- DATA LOADING ---------- */
+let _resultsSyncRetries = 0;
+
 async function loadResults() {
   const token = sessionStorage.getItem("portal_token");
   try {
     const resp = await fetch(`${API_BASE}/api/results`, { headers: { "Authorization": `Bearer ${token}` } });
     if (resp.status === 401) { doLogout(); return; }
-    allResults = await resp.json();
+    const data = await resp.json();
+
+    // ახალი response shape: {status: "ready"|"syncing", results: [...]}.
+    // ჯერ კიდევ თავსებადია, თუ backend ძველ ბრტყელ მასივს დააბრუნებდა
+    // (Array.isArray(data)) — თუმცა production-ში ეს აღარ უნდა მოხდეს.
+    const status = Array.isArray(data) ? "ready" : (data.status || "ready");
+    allResults = Array.isArray(data) ? data : (data.results || []);
+
     renderDashboard(allResults);
     renderLabPage(allResults);
     renderRadiologyPage(allResults);
     renderForma100Page(allResults);
     renderPrescriptionsPage(allResults);
     renderHistoryPage(allResults);
+
+    if (status === "syncing") {
+      showSyncingBanner(true);
+      // 1C-დან პაციენტის ისტორიის პირველადი სინქრონიზაცია ჯერ
+      // მიმდინარეობს ფონურ რეჟიმში — ვცდით ხელახლა რამდენიმე წამში.
+      // მაქსიმუმ ~2 წუთი ვცდით (24 * 5წმ), შემდეგ ვჩერდებით და
+      // ვუტოვებთ იმას, რაც უკვე ჩატვირთულია.
+      if (_resultsSyncRetries < 24) {
+        _resultsSyncRetries++;
+        setTimeout(loadResults, 5000);
+      }
+    } else {
+      _resultsSyncRetries = 0;
+      showSyncingBanner(false);
+    }
   } catch (err) {
     document.getElementById("labContent").innerHTML = '<div class="empty-state">შედეგების ჩატვირთვა ვერ მოხერხდა. სცადეთ გვერდის განახლება.</div>';
   }
   loadPendingTests();
+}
+
+function showSyncingBanner(show) {
+  let el = document.getElementById("syncingBanner");
+  if (!show) {
+    if (el) el.style.display = "none";
+    return;
+  }
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "syncingBanner";
+    el.className = "notif-banner pending";
+    el.innerHTML = `<span class="pin">⏳</span><div><strong>თქვენი მონაცემები იტვირთება</strong><span>პირველადი სინქრონიზაცია მიმდინარეობს — ცოტა ხანში ავტომატურად გამოჩნდება.</span></div>`;
+    const anchor = document.getElementById("dashboardPendingNotif");
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(el, anchor);
+    }
+  }
+  el.style.display = "";
 }
 
 /* "დანიშნული, ჯერ არშესრულებული" კვლევები/ანალიზები — ცალკე, მესამე,

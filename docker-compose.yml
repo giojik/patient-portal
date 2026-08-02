@@ -30,17 +30,17 @@ services:
   #   depends_on:
   #     - portal-db
 
-  # scheduler:
-  #   image: mcuadros/ofelia:latest
-  #   depends_on:
-  #     - sync-worker
-  #   command: daemon --docker
-  #   labels:
-  #     ofelia.job-run.sync.schedule: "@every 5m"
-  #     ofelia.job-run.sync.container: "labportal-sync-worker-1"
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock:ro
-  #   restart: unless-stopped
+  # onec-sync-worker: 1C-ის periodic incremental sync (ბოლო
+  # ONEC_SYNC_WINDOW_DAYS დღე, გლობალურად). loop() თვითონ იძინებს
+  # ONEC_SYNC_INTERVAL_SECONDS-ს შორის, ცალკე scheduler არ სჭირდება.
+  onec-sync-worker:
+    build: .
+    container_name: labportal-onec-sync-worker
+    command: ["python3", "onec_sync_worker.py"]
+    env_file: .env
+    depends_on:
+      - portal-db
+    restart: unless-stopped
 
 secrets:
   pg_password:

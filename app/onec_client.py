@@ -46,6 +46,74 @@ def _get(path, params=None):
     return resp.json()
 
 
+def fetch_all_paginated(entity: str, filter_str: str, page_size: int = 2000):
+    """
+    ⚠️ დადასტურდა (2026-08-02): ეს 1C OData კონფიგურაცია საერთოდ არ უჭერს
+    მხარს `$skip`-ს ამ entity-ზე — 501 Not Implemented, მიუხედავად
+    `$orderby`-ის დამატებისა, და თუნდაც `$skip=0`-ზეც კი (მხოლოდ
+    პარამეტრის არსებობაც კმარა შეცდომისთვის).
+
+    ამიტომ ეს ფუნქცია აღარ cycle-ავს `$skip`-ით — მხოლოდ ერთ page-ს
+    აბრუნებს (`$top`-ით შემოსაზღვრული). თუ result set `page_size`-ს
+    აღემატება, დარჩენილი ჩანაწერები **დუმილში დაიკარგება** — ამიტომ ეს
+    ფუნქცია გამოსადეგია მხოლოდ იქ, სადაც result set საიმედოდ მცირეა
+    (მაგ. ერთი პაციენტის ისტორია `Пациент_Key`-ით გაფილტრული).
+
+    გლობალური, თარიღით შემოსაზღვრული query-ებისთვის (periodic worker)
+    გამოიყენე `fetch_by_date_windows` ამის მაგივრად.
+    """
+    data = _get(
+        entity,
+        params={"$filter": filter_str, "$format": "json", "$top": str(page_size)},
+    )
+    rows = data.get("value", [])
+    if len(rows) == page_size:
+        print(
+            f"[fetch_all_paginated] გაფრთხილება: '{entity}' დააბრუნა ზუსტად "
+            f"page_size ({page_size}) ჩანაწერი filter-ით '{filter_str}' — "
+            f"შესაძლოა მეტიც არსებობდეს, მაგრამ $skip არ არის მხარდაჭერილი "
+            f"ამ 1C კონფიგურაციაზე, ამიტომ დარჩენილი დაიკარგა."
+        )
+    yield from rows
+
+
+def fetch_by_date_windows(entity: str, since, until, window_hours: int = 24,
+                           top: int = 2000, extra_filter: str = None):
+    """
+    თარიღის დიაპაზონებით (`Date ge X and Date lt Y`) დაყოფილი fetch —
+    `$skip`-ის გამოყენების გარეშე, რადგან ეს 1C კონფიგურაცია მას არ
+    უჭერს მხარს. თითოეული "გვერდი" თარიღის window-ითაა ბუნებრივად
+    შემოსაზღვრული, არა offset-ით.
+
+    since/until: datetime ობიექტები (UTC-ს ვვარაუდობთ, ისევე როგორც
+    დანარჩენი კოდი).
+    window_hours: რაც უფრო პატარაა, მით უფრო ნაკლები ჩანაწერი ხვდება
+    ერთ page-ში — თუ ხშირად ხედავ truncation-ის გაფრთხილებას, შეამცირე.
+    """
+    from datetime import timedelta
+
+    window = timedelta(hours=window_hours)
+    cur = since
+    while cur < until:
+        window_end = min(cur + window, until)
+        date_filter = (
+            f"Date ge datetime'{cur.strftime('%Y-%m-%dT%H:%M:%S')}' "
+            f"and Date lt datetime'{window_end.strftime('%Y-%m-%dT%H:%M:%S')}'"
+        )
+        filt = f"({date_filter}) and ({extra_filter})" if extra_filter else date_filter
+
+        data = _get(entity, params={"$filter": filt, "$format": "json", "$top": str(top)})
+        rows = data.get("value", [])
+        if len(rows) == top:
+            print(
+                f"[fetch_by_date_windows] გაფრთხილება: ფანჯარა {cur}–{window_end} "
+                f"დააბრუნა ზუსტად top ({top}) ჩანაწერი — შესაძლოა მეტიც არსებობდეს. "
+                f"შეამცირე window_hours."
+            )
+        yield from rows
+        cur = window_end
+
+
 def find_patient_by_personal_id(personal_id: str):
     """
     აბრუნებს {"ref_key": ..., "full_name": ..., "phone": ...} თუ ნაპოვნია,

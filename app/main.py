@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Header
+from fastapi import FastAPI, HTTPException, Request, Header, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import Response
 from slowapi import Limiter
@@ -18,7 +18,8 @@ from app.pdf_report import generate_panel_pdf
 from app.html_pdf_report import generate_radiology_pdf
 from app.session import create_token, verify_token
 from app.otp_auth import request_code, verify_code
-from app.onec_client import get_patient_results, get_panel_by_id, get_patient_name, get_personal_id_by_kartoteka, get_pending_tests
+from app.onec_client import get_panel_by_id, get_patient_name, get_personal_id_by_kartoteka, get_pending_tests
+from app.onec_cache import get_backfill_status, claim_backfill, run_patient_backfill, get_patient_results_cached
 from app import feature_flags as ff
 from app import audit
 from app.admin import router as admin_router
@@ -138,14 +139,39 @@ async def auth_verify_code(request: Request, body: VerifyCodeBody):
 
 @app.get("/api/results")
 @limiter.limit("20/minute")
-async def results(request: Request, authorization: str = Header(None)):
+async def results(request: Request, background_tasks: BackgroundTasks, authorization: str = Header(None)):
     """
     სესიის წყაროს მიხედვით (token-იდან), შედეგები იტვირთება
-    ან Terra-ს Portal DB-დან, ან 1C-დან პირდაპირ (live query).
+    ან Terra-ს Portal DB-დან, ან 1C-ის Postgres cache-დან (onec_documents).
+
+    1C-ის შემთხვევაში ეს endpoint აღარასდროს ელაპარაკება 1C-ს
+    სინქრონულად:
+      - თუ ეს პაციენტის პირველი login-ია (status == "none"), ვიწყებთ
+        backfill-ს ფონურად (fire-and-forget) და ვაბრუნებთ ცარიელ/
+        ნაწილობრივ სიას სტატუსით "syncing" — frontend-მა უნდა გაიმეოროს
+        request რამდენიმე წამში.
+      - status == "in_progress" — backfill უკვე მიმდინარეობს (ან ამ, ან
+        პარალელური request-ის მიერ), ისევ ვაბრუნებთ იმას რაც უკვე
+        დაცერილია cache-ში + სტატუსს "syncing".
+      - status == "done" — ჩვეულებრივი, სწრაფი წაკითხვა Postgres-იდან.
+
+    ახალ/განახლებულ ჩანაწერებს (backfill-ის შემდეგ) ავსებს ცალკე
+    periodic worker (onec_sync_worker.py), ამ endpoint-ისგან
+    დამოუკიდებლად.
     """
     session = get_current_session(authorization)
+    status = "ready"
+
     if session["src"] == "onec":
-        all_results = get_patient_results(session["sub"])
+        backfill_status = get_backfill_status(session["sub"])
+        if backfill_status == "none":
+            if claim_backfill(session["sub"]):
+                background_tasks.add_task(run_patient_backfill, session["sub"])
+            status = "syncing"
+        elif backfill_status == "in_progress":
+            status = "syncing"
+
+        all_results = get_patient_results_cached(session["sub"])
         patient_name = get_patient_name(session["sub"])
         personal_id = get_personal_id_by_kartoteka(session["sub"])
     else:
@@ -159,7 +185,7 @@ async def results(request: Request, authorization: str = Header(None)):
         "patient", f"{session['src']}:{session['sub']}", request.client.host if request.client else "",
         "view_results", f"{len(filtered)} ჩანაწერი", personal_id=personal_id, full_name=patient_name,
     )
-    return filtered
+    return {"status": status, "results": filtered}
 
 
 @app.get("/api/patient/pending-tests")
