@@ -127,8 +127,26 @@ def generate_panel_pdf(patient_name: str, panel_data: dict) -> bytes:
 
     elements.append(Paragraph(panel_data["panel_name"], panel_title_style))
 
-    table_data = [["კვლევა", "შედეგი", "ნორმა", "სტატუსი"]]
-    row_colors = []
+    header_cell_style = ParagraphStyle(
+        "TableHeaderKa", fontName="DejaVuSans-Bold", fontSize=9.5,
+        textColor=colors.HexColor("#124d42"), leading=12,
+    )
+    body_cell_style = ParagraphStyle(
+        "TableBodyKa", fontName="DejaVuSans", fontSize=9.5,
+        textColor=colors.HexColor("#1f2d2b"), leading=12,
+    )
+
+    def _status_style(color):
+        return ParagraphStyle(
+            "TableStatusKa", parent=body_cell_style, textColor=color,
+        )
+
+    table_data = [[
+        Paragraph("კვლევა", header_cell_style),
+        Paragraph("შედეგი", header_cell_style),
+        Paragraph("ნორმა", header_cell_style),
+        Paragraph("სტატუსი", header_cell_style),
+    ]]
 
     for item in panel_data["items"]:
         norm_range = (
@@ -138,31 +156,24 @@ def generate_panel_pdf(patient_name: str, panel_data: dict) -> bytes:
         )
         result_display = f"{item['result_value'] or '—'} {item.get('unit') or ''}".strip()
         status = item.get("status", "unknown")
+        color = STATUS_COLORS.get(status, colors.black)
         table_data.append([
-            item["test_name"],
-            result_display,
-            norm_range,
-            STATUS_LABELS.get(status, ""),
+            Paragraph(item["test_name"], body_cell_style),
+            Paragraph(result_display, _status_style(color)),
+            Paragraph(norm_range, body_cell_style),
+            Paragraph(STATUS_LABELS.get(status, ""), _status_style(color)),
         ])
-        row_colors.append(STATUS_COLORS.get(status, colors.black))
 
-    table = Table(table_data, colWidths=[70 * mm, 40 * mm, 30 * mm, 35 * mm])
+    table = Table(table_data, colWidths=[62 * mm, 34 * mm, 30 * mm, 48 * mm])
 
     style_commands = [
-        ("FONTNAME", (0, 0), (-1, 0), "DejaVuSans-Bold"),
-        ("FONTNAME", (0, 1), (-1, -1), "DejaVuSans"),
-        ("FONTSIZE", (0, 0), (-1, -1), 9.5),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e6f2ef")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#124d42")),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
         ("TOPPADDING", (0, 0), (-1, -1), 6),
         ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#124d42")),
         ("LINEBELOW", (0, 1), (-1, -2), 0.5, colors.HexColor("#e0e6e4")),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
     ]
-    for i, color in enumerate(row_colors, start=1):
-        style_commands.append(("TEXTCOLOR", (1, i), (1, i), color))
-        style_commands.append(("TEXTCOLOR", (3, i), (3, i), color))
 
     table.setStyle(TableStyle(style_commands))
     elements.append(table)

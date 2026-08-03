@@ -9,7 +9,7 @@ from firebird.driver import connect, DatabaseError
 
 # --- დაკავშირების პარამეტრები ---
 # რეკომენდაცია: password გაიტანეთ environment variable-ში, არა კოდში პირდაპირ
-DSN = "10.10.5.249/3050:terra25"   # host/port:database
+DSN = "REDACTED_IP/3050:terra25"   # host/port:database
 USER = "u_sysconnect"
 PASSWORD = "1234"            # !!! აუცილებლად შეცვალეთ რეალურ პაროლზე
 
