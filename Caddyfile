@@ -1,27 +1,32 @@
 myinnova.ge {
-    # PWA-ის საჯარო სტატიკური ფაილები (manifest, icons, service worker) —
-    # ეს გამონაკლისი აუცილებელია, რომ PWABuilder/Bubblewrap-მა შეძლოს APK-ის
-    # გენერაცია. პაციენტის მონაცემებს არაფრით არ ეხება — მხოლოდ ბრენდის
-    # ხატულები და manifest.json.
-    @pwa_assets {
-        path /portal/manifest.json /portal/sw.js /portal/favicon.ico /portal/favicon-16x16.png /portal/favicon-32x32.png /portal/icons/*
+    # route{} აუცილებელია — მის გარეშე Caddy დირექტივებს თავისით გადაალაგებდა
+    # default order-ის მიხედვით (respond ყოველთვის reverse_proxy-ზე ადრე
+    # სრულდებოდა, მიუხედავად ფაილში დაწერილი თანმიმდევრობისა).
+    route {
+        # PWA-ის საჯარო სტატიკური ფაილები (manifest, icons, service worker) —
+        # ეს გამონაკლისი აუცილებელია, რომ PWABuilder/Bubblewrap-მა შეძლოს
+        # APK-ის გენერაცია. პაციენტის მონაცემებს არაფრით არ ეხება — მხოლოდ
+        # ბრენდის ხატულები და manifest.json.
+        @pwa_assets {
+            path /portal/manifest.json /portal/sw.js /portal/favicon.ico /portal/favicon-16x16.png /portal/favicon-32x32.png /portal/icons/*
+        }
+        reverse_proxy @pwa_assets api:8000
+
+        # დროებითი "მხოლოდ ჩემთვის" ბლოკი — წაშალეთ ეს @notallowed ბლოკი
+        # სრული გაშვების დროს, როცა საიტი ყველასთვის უნდა გაიხსნას.
+        @notallowed {
+            not remote_ip 10.10.0.0/24 31.146.5.214 185.115.5.169 10.10.14.0/23 10.10.4.0/23 192.168.20.0/24 82.211.128.59 31.146.130.107 31.146.130.106 10.10.1.152 4.236.33.188
+        }
+        respond @notallowed 403
+
+        redir / /portal permanent
+
+        @restricted {
+            path /admin* /api/admin*
+            not remote_ip 10.10.0.0/24
+        }
+        respond @restricted 403
+
+        reverse_proxy api:8000
     }
-    reverse_proxy @pwa_assets api:8000
-
-    # დროებითი "მხოლოდ ჩემთვის" ბლოკი — წაშალეთ ეს @notallowed ბლოკი
-    # სრული გაშვების დროს, როცა საიტი ყველასთვის უნდა გაიხსნას.
-    @notallowed {
-        not remote_ip 10.10.0.0/24 31.146.5.214 185.115.5.169 10.10.14.0/23 10.10.4.0/23 192.168.20.0/24 82.211.128.59 31.146.130.107 31.146.130.106 10.10.1.152 4.236.33.188
-    }
-    respond @notallowed 403
-
-    redir / /portal permanent
-
-    @restricted {
-        path /admin* /api/admin*
-        not remote_ip 10.10.0.0/24
-    }
-    respond @restricted 403
-
-    reverse_proxy api:8000
 }
