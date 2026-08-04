@@ -11,6 +11,21 @@ services:
       - portal_pg_data:/var/lib/postgresql/data
       - ./db-init:/docker-entrypoint-initdb.d:ro
 
+      
+  caddy:
+    image: caddy:2-alpine
+    container_name: labportal-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
   api:
     build: .
     container_name: labportal-api
@@ -48,3 +63,5 @@ secrets:
 
 volumes:
   portal_pg_data:
+  caddy_data:
+  caddy_config:

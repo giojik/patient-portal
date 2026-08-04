@@ -277,14 +277,15 @@ RADIOLOGY_KEYWORDS = [
 # კატეგორიები, რომლებიც პაციენტს არ უნდა უჩვენდეს ნაგულისხმევად
 # (ადმინს შეუძლია ეს ჩართოს feature_flags-იდან):
 #   exam_diary, discharge_epicrisis, preop_epicrisis, anesthesia_protocol,
-#   operation_protocol, admitting_doctor_note, surgical_team
+#   operation_protocol, admitting_doctor_note, surgical_team, consultation_inpatient
 _TEMPLATE_KEYWORD_RULES = [
     ("100/ა", "forma100"),
     ("100/a", "forma100"),
     ("პაციენტის გასინჯვის ფურცელი", "exam_diary"),
     ("გასინჯვის ფურცელი", "exam_diary"),
     ("გაწერის ეპიკრიზი", "discharge_epicrisis"),
-    ("წინასაოპერაციო ეპიკრიზი", "preop_epicrisis"),
+    ("წინასაოპერაციო", "preop_epicrisis"),  # ეპიკრიზი, ანესთეზიოლოგის ჩანაწერი და სხვ.
+    ("ოპერაციისთვის მომზადების", "preop_epicrisis"),  # "...ანესთეზიისა და ოპერაციისთვის მომზადების ფურცელი"
     ("ეპიკრიზი", "discharge_epicrisis"),  # უცნობი ეპიკრიზის ვარიანტები — უსაფრთხოებისთვის დამალული
     ("გაუტკივარების ოქმი", "anesthesia_protocol"),
     ("საოპერაციო ბრიგადა", "surgical_team"),
@@ -294,30 +295,41 @@ _TEMPLATE_KEYWORD_RULES = [
     ("რეკომენდაციები გაწერისას", "discharge_recommendation"),
     ("მომსახურებების დანიშვნა", "prescription"),
     ("დანიშნულების ფურცელი", "prescription"),
+    ("კონსულტაცია (სტაციონარი)", "consultation_inpatient"),  # სტაციონარული კონსულტაცია — დამალული
     ("კონსულტაცია", "consultation"),
 ]
 
 
-def _classify_category(template_name: str, panel_name: str = None) -> str:
+def _classify_category(template_name: str, panel_name: str = None, extra_text: str = None) -> str:
     """
     კატეგორიის კლასიფიკაცია, უპირატესად დოკუმენტის შაბლონის სახელით
     (Catalog_ШаблоныМедицинскихДокументов.Description) — ეს ცალსახად
-    განასხვავებს დოკუმენტის ტიპს (ეპიკრიზი, ოქმი, ფორმა 100 და ა.შ.),
-    ნაცვლად ადრინდელი მიდგომისა, სადაც მხოლოდ პანელის/მომსახურების
-    სახელი გამოიყენებოდა (რაც ვერ ასხვავებდა ამ ტიპებს ერთმანეთისგან).
+    განასხვავებს დოკუმენტის ტიპს (ეპიკრიზი, ოქმი, ფორმა 100 და ა.შ.).
 
-    panel_name — fallback, თუ შაბლონის სახელი ცარიელია/უცნობია.
+    ზოგ შემთხვევაში (მაგ. "შაბლონების ნომენკლატურა" — ამ კონკრეტული
+    შაბლონისთვის Description ველი 1C-ში არაინფორმაციულია) რეალური ტიპი
+    ჩანს მხოლოდ დოკუმენტის CDA შიგთავსის პირველ სათაურში — ამიტომ
+    extra_text-ითაც შეგვიძლია გადავცეთ ეს ტექსტი, fallback-ის სახით.
+
+    candidates მოწმდება თანმიმდევრობით: template_name, panel_name,
+    extra_text — რომელიც პირველი დაემთხვევა კონკრეტულ წესს, ის იმარჯვებს.
     """
-    name = template_name or panel_name or ""
-    lname = name.lower()
+    candidates = [template_name, panel_name, extra_text]
 
-    for keyword, category in _TEMPLATE_KEYWORD_RULES:
-        if keyword in name:
-            return category
+    for text in candidates:
+        if not text:
+            continue
+        for keyword, category in _TEMPLATE_KEYWORD_RULES:
+            if keyword in text:
+                return category
 
-    for kw in RADIOLOGY_KEYWORDS:
-        if kw in lname:
-            return "radiology"
+    for text in candidates:
+        if not text:
+            continue
+        ltext = text.lower()
+        for kw in RADIOLOGY_KEYWORDS:
+            if kw in ltext:
+                return "radiology"
 
     return "lab"
 
@@ -441,7 +453,6 @@ def _document_to_results(doc: dict) -> list:
         panel_name = _get_nomenclature_name(services[0].get("Номенклатура_Key"))
 
     template_name = _get_template_name(doc.get("ШаблонМедицинскогоДокумента_Key"))
-    category = _classify_category(template_name, panel_name)
 
     health_indicators = doc.get("ПоказателиЗдоровья", [])
     is_narrative = not health_indicators
@@ -454,6 +465,8 @@ def _document_to_results(doc: dict) -> list:
         # (რადიოლოგია, ეპიკრიზი, ოქმი, ფორმა 100, კონსულტაცია და ა.შ.)
         cda_key = doc.get("CDAДокумент_Key")
         sections = get_cda_narrative(cda_key)
+        first_section_title = sections[0]["title"] if sections else None
+        category = _classify_category(template_name, panel_name, first_section_title)
         for section in sections:
             title = section["title"] or "დასკვნა"
             items.append({
@@ -471,6 +484,8 @@ def _document_to_results(doc: dict) -> list:
                 "sample_date": sample_date,
             })
         return items
+
+    category = _classify_category(template_name, panel_name)
 
     for ind in health_indicators:
         value = ind.get("Значение")

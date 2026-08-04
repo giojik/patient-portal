@@ -1,0 +1,18 @@
+myinnova.ge {
+    # დროებითი "მხოლოდ ჩემთვის" ბლოკი — წაშალეთ ეს @notallowed ბლოკი
+    # სრული გაშვების დროს, როცა საიტი ყველასთვის უნდა გაიხსნას.
+    @notallowed {
+        not remote_ip 10.10.0.0/24 31.146.5.214 185.115.5.169 10.10.14.0/23 10.10.4.0/23 192.168.20.0/24 82.211.128.59 31.146.130.107 31.146.130.106 10.10.1.152
+    }
+    respond @notallowed 403
+
+    redir / /portal permanent
+
+    @restricted {
+        path /admin* /api/admin*
+        not remote_ip 10.10.0.0/24
+    }
+    respond @restricted 403
+
+    reverse_proxy api:8000
+}
