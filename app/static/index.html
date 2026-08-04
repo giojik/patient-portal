@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Innova Medical — პაციენტის პორტალი</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/portal/manifest.json">
+<meta name="theme-color" content="#0E2340">
+<link rel="icon" type="image/png" sizes="32x32" href="/portal/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/portal/favicon-16x16.png">
+<link rel="shortcut icon" href="/portal/favicon.ico">
+
+<!-- iOS "Add to Home Screen" support (Safari ignores manifest.json) -->
+<link rel="apple-touch-icon" href="/portal/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="პაციენტის პორტალი">
 <style>
   :root {
     --primary: #0E2340;
@@ -689,6 +702,13 @@
 </div>
 
 <script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/portal/sw.js").catch((err) => {
+      console.warn("SW registration failed:", err);
+    });
+  });
+}
 const API_BASE = "";
 let allResults = [];
 
